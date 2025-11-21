@@ -32,11 +32,13 @@ def simplify_and_segment(traj: LineString, simplify_tol=0.5) -> List[LineString]
   segments = [LineString([pts[i], pts[i+1]]) for i in range(len(pts)-1)]
   return segments
 
-def build_str_tree(traj_dict: Dict[int, LineString]) -> Tuple[STRtree, List[LineString], Dict[LineString, int]]:
+def build_str_tree(traj_dict: Dict[int, LineString], exclude_ids: List[int]) -> Tuple[STRtree, List[LineString], Dict[LineString, int]]:
   """Build the STR-Tree for the given Trajectories."""
   segments = []
   segment_lookup = {}
   for traj_id, traj in traj_dict.items():
+    if traj_id in exclude_ids:
+      continue
     segs = simplify_and_segment(traj, .1)
     segments.extend(segs)
     for seg in segs:
@@ -147,11 +149,11 @@ def filter_interactions(
 
   return out
 
-def detect_interactions(df: pd.DataFrame, track_ids: List[int], distance: float) -> Dict[int, List[int]]:
+def detect_interactions(df: pd.DataFrame, track_ids: List[int], distance: float, exclude_ids: List[int]) -> Dict[int, List[int]]:
   """Queries the STR-Tree to gain intersecting trajectory segments and candidates for interactions."""
   target_dict = traj_list_to_linestrings(df[df["track_id"].isin(track_ids)])
   traj_dict = traj_list_to_linestrings(df)
-  tree, segments, segment_lookup = build_str_tree(traj_dict)
+  tree, segments, segment_lookup = build_str_tree(traj_dict, exclude_ids=exclude_ids)
 
   result = {}
   for traj_id, traj in target_dict.items():
@@ -164,21 +166,26 @@ def detect_interactions(df: pd.DataFrame, track_ids: List[int], distance: float)
 def get_interactions(
     df: pd.DataFrame,
     track_ids: List[int],
+    exclude_ids: List[int],
     distance: float,
     min_duration: float=None,
-    batch_size: int=5
+    batch_size: int=5,
+    show_progress: bool=False
 ) -> List[Tuple[int, int, float, float, float, float, float, int]]:
   """Get interactions between the specified and other participants. Limits the time window to the batch of trajectories."""
+  pbar = tqdm(total=len(track_ids), disable=not show_progress, unit="cyclist")
   result = []
-  for batch in tqdm(range(0, len(track_ids), batch_size)):
+  for batch in range(0, len(track_ids), batch_size):
     batch_ids = track_ids[batch:batch+batch_size]
     # limit df to the time window of target tracks
     t0, t1 = get_time_window(df, batch_ids)
     df_window = df[(df["timestamp"] >= t0) & (df["timestamp"] <= t1)]
 
-    candidates = detect_interactions(df_window, batch_ids, distance)
+    candidates = detect_interactions(df_window, batch_ids, distance, exclude_ids=exclude_ids)
     interactions = filter_interactions(df_window, candidates, distance, min_duration=min_duration)
     result.extend(interactions)
+    pbar.update(min(batch_size, len(track_ids) - batch))
+  pbar.close()
   return result
 
 def save_interactions_to_csv(interactions, path):
