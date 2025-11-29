@@ -51,7 +51,9 @@ def filter_interactions(
   df,
   candidates: Dict[int, List[int]],
   distance: float,
-  min_duration: float=0.0
+  min_duration: float=0.0,
+  fov: float=360.0,
+  min_speed: float=0.0,
 ) -> List[Tuple[int, int, float, float, float, float, float, int]]:
   """Verify the interactions are within the given distance, and compute interaction features."""
   out = []
@@ -70,6 +72,7 @@ def filter_interactions(
   hd = df["rotation_z"].to_numpy() # heading [-pi, pi]
 
   dist2 = distance * distance  # avoid sqrt
+  min_speed2 = min_speed * min_speed
 
   for t1, cand_list in candidates.items():
     mask1 = ids == t1
@@ -97,10 +100,30 @@ def filter_interactions(
       if len(common) == 0:
         continue
 
+      # --- DISTANCE FILTER ----------------
+
       dx = x1[i1] - x2[i2]
       dy = y1[i1] - y2[i2]
       dist_sq = dx*dx + dy*dy
-      close_mask = dist_sq <= dist2
+      dist_mask =(dist_sq <= dist2)
+
+      # --- DIRECTIONAL ATTENTION FILTER ---
+
+      bearing = np.arctan2(-dy, -dx) # angle from t1 to t2
+      rel_angle = bearing - h1[i1]   # difference to heading
+      rel_angle = (rel_angle + np.pi) % (2*np.pi) - np.pi # wrap to [-pi, pi]
+      front_limit = np.deg2rad(fov/2)
+      front_mask = np.abs(rel_angle) <= front_limit
+
+      # --- SPEED FILTER -------------------
+
+      speed1 = vx1[i1]**2 + vy1[i1]**2
+      speed2 = vx2[i2]**2 + vy2[i2]**2
+      move_mask = (speed1 >= min_speed2) & (speed2 >= min_speed2)
+
+      # ------------------------------------
+
+      close_mask = dist_mask & front_mask & move_mask
 
       if not np.any(close_mask):
         continue
@@ -169,6 +192,8 @@ def get_interactions(
     exclude_ids: List[int],
     distance: float,
     min_duration: float=None,
+    fov: float=360,
+    min_speed: float=0.0,
     batch_size: int=5,
     show_progress: bool=False
 ) -> List[Tuple[int, int, float, float, float, float, float, int]]:
@@ -182,7 +207,7 @@ def get_interactions(
     df_window = df[(df["timestamp"] >= t0) & (df["timestamp"] <= t1)]
 
     candidates = detect_interactions(df_window, batch_ids, distance, exclude_ids=exclude_ids)
-    interactions = filter_interactions(df_window, candidates, distance, min_duration=min_duration)
+    interactions = filter_interactions(df_window, candidates, distance, min_duration=min_duration, fov=fov, min_speed=min_speed)
     result.extend(interactions)
     pbar.update(min(batch_size, len(track_ids) - batch))
   pbar.close()
