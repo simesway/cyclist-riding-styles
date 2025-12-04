@@ -110,7 +110,7 @@ def pick_switch_idx(group, longitudinal):
     start = group[0]
     end = group[-1] + 1
     local = longitudinal[start:end]
-    return start + int(np.argmin(np.abs(local)))
+    return group[0] # first frame where the long < 0
 
 
 def extract_overtake_windows(ts, long_a, long_b, delta=15, k=25, max_frames=63) -> List[Dict]:
