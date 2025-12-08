@@ -16,7 +16,7 @@ def apply_time_window(df: pd.DataFrame, t_start: int=None, t_end: int=None, t_co
 def clean_heading(h_raw: np.ndarray) -> np.ndarray:
   h = h_raw.copy()
 
-  #h = np.unwrap(h)
+  h = np.unwrap(h)
 
   ref = np.median(h[:max(25, len(h) // 2)])
 
