@@ -1,6 +1,15 @@
 import numpy as np
+import pandas as pd
 from typing import List, Dict
 from data.utils import clean_heading
+
+
+def save_maneuvers_to_csv(maneuvers, filepath):
+  df = pd.DataFrame([m.__dict__ for m in maneuvers])
+  float_cols = df.select_dtypes(include="float").columns
+  df[float_cols] = df[float_cols].round(3)
+  df = df.drop_duplicates()
+  df.to_csv(filepath, index=False)
 
 
 def get_lateral_longitudinal(a, b):
