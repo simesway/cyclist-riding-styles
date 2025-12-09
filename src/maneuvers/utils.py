@@ -32,7 +32,7 @@ def get_lateral_longitudinal(a, b):
     return_indices=True
   )
   if len(ts) == 0:
-    return None, None, None, None, None
+    return None, None, None
 
   # aligned positions
   ax = a["translation_x"].to_numpy()[i_a]
