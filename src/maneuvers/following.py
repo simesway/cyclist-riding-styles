@@ -7,11 +7,10 @@ from dataclasses import dataclass
 from data.smoothing import smooth
 from data.utils import clean_heading
 from features.safety_metrics import time_headway
-from features.vehicle_dynamics import longitudinal_velocity
+from features.vehicle_dynamics import longitudinal_velocity, velocity
 from maneuvers.utils import get_lateral_longitudinal, detect_sign_flips
 
 
-# TODO: integrate FollowingManeuver into module
 @dataclass
 class FollowingManeuver:
   follower_id: int
@@ -20,11 +19,11 @@ class FollowingManeuver:
   t_end: float
   duration: float
 
-  distance_min: float
-  distance_mean: float
+  long_distance_min: float
+  long_distance_mean: float
   lateral_offset_mean: float
 
-  thw_avg: float
+  thw_mean: float
   thw_min: float
 
   follower_speed_mean: float
@@ -32,7 +31,6 @@ class FollowingManeuver:
   speed_diff_mean: float
 
   rel_heading_std: float
-
 
 
 def get_true_intervals(bool_array):
@@ -61,7 +59,7 @@ def detect_following(
     max_long_distance: float = 30.,
     max_time_headway: float = 6.,
     max_rel_heading: float = 35,
-) -> List[Tuple]:
+) -> List[FollowingManeuver]:
   trajectories = trajectories.sort_values(by=["timestamp"])
   a_idx, b_idx = interaction["track_id"], interaction["other_id"]
   a = trajectories[trajectories["track_id"] == a_idx]
@@ -80,6 +78,8 @@ def detect_following(
 
   ha = clean_heading(ta["rotation_z"].to_numpy())
   hb = clean_heading(tb["rotation_z"].to_numpy())
+  v_a = velocity(ta).to_numpy()
+  v_b = velocity(tb).to_numpy()
   v_long_a = longitudinal_velocity(ta).to_numpy()
   v_long_b = longitudinal_velocity(tb).to_numpy()
   v_long_a_smooth = smooth(v_long_a, 0.2)
@@ -114,13 +114,15 @@ def detect_following(
     if ts[e] - ts[s] < min_length:
       continue
 
-    if a_long_smooth[s] > 0:
+    if np.mean(a_long_smooth[s:e]) > 0:
       l, f = b_idx, a_idx
       long, lat = a_long_smooth[s:e], a_lat_smooth[s:e]
+      v_l, v_f = v_b[s:e], v_a[s:e]
       thw = thw_a[s:e]
     else:
       l, f = a_idx, b_idx
       long, lat = b_long_smooth[s:e], b_lat_smooth[s:e]
+      v_l, v_f = v_a[s:e], v_b[s:e]
       thw = thw_b[s:e]
 
     lat_offset_ok = np.abs(lat) < max_lateral_distance
@@ -130,33 +132,44 @@ def detect_following(
     is_following = lat_offset_ok & rel_heading_ok & spatial_headway_ok & time_headway_ok
 
     segment_intervals = get_true_intervals(is_following)
-    absolute_intervals = [
-      (s + start, s + end)
-      for start, end in segment_intervals
-      if ts[s+end] - ts[s+start] >= min_length
-    ]
-    result.extend([
-      (int(f), int(l), float(ts[start]), float(ts[end]))
-      for start, end in absolute_intervals
-    ])
+
+    if not segment_intervals:
+      continue
+
+    maneuvers = []
+    for start, end in segment_intervals:
+      if ts[s+end] - ts[s+start] < min_length:
+        continue
+
+      end += 1  # make interval end-inclusive
+      t0, t1 = float(ts[s+start]), float(ts[s+end])
+      local_thw = thw[start:end]
+      local_lat = lat[start:end]
+      local_long = long[start:end]
+      maneuvers.append(
+        FollowingManeuver(
+          follower_id=int(f), leader_id=int(l),
+          t_start=t0, t_end=t1, duration=t1-t0,
+          long_distance_min=float(np.min(local_long)),
+          long_distance_mean=float(np.mean(local_long)),
+          lateral_offset_mean=float(np.mean(np.abs(local_lat))),
+          thw_min=float(np.min(local_thw)),
+          thw_mean=float(np.mean(np.abs(local_thw))),
+          follower_speed_mean=float(np.mean(v_f[start:end])),
+          leader_speed_mean=float(np.mean(v_l[start:end])),
+          speed_diff_mean=float(np.mean(np.abs(v_f[start:end] - v_l[start:end]))),
+          rel_heading_std=float(np.std(rel_heading[s+start:s+end]))
+        )
+      )
+
+    result.extend(maneuvers)
+
   return result
 
 
-def get_following_maneuvers(traj_df: pd.DataFrame, interactions: pd.Series, config: dict) -> List[Tuple]:
+def get_following_maneuvers(traj_df: pd.DataFrame, interactions: pd.Series, config: dict) -> List[FollowingManeuver]:
   """
   Extract all following maneuvers from trajectory data and interaction metadata.
-
-  Parameters
-  ----------
-  traj_df : DataFrame
-     Full trajectory dataset.
-  interactions : DataFrame
-     Interaction metadata with (track_id, other_id, t_start, t_end).
-
-  Returns
-  -------
-  List[Tuple]
-     List of overtaking event tuples.
   """
   maneuvers = []
   for _, interaction in tqdm(interactions.iterrows(), total=interactions.shape[0]):

@@ -1,6 +1,9 @@
 import numpy as np
 import pandas as pd
 
+def velocity(df: pd.DataFrame) -> pd.Series:
+  """Compute total velocity magnitude."""
+  return np.hypot(df['velocity_x'], df['velocity_y'])
 
 def longitudinal_velocity(df: pd.DataFrame) -> pd.Series:
   """
