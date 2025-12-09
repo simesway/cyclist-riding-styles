@@ -1,11 +1,11 @@
 import matplotlib.pyplot as plt
 from collections import defaultdict
 
-def plot_trajectory(x, y, ax=None):
+def plot_trajectory(x, y, ax=None, label=None):
   if ax is None:
     fig, ax = plt.subplots()
 
-  ax.plot(x, y)
+  ax.plot(x, y, label=label)
   ax.scatter(x, y, s=8)
   ax.set_aspect("equal", adjustable="box")
   ax.set_xlabel("Translation x")
@@ -16,7 +16,7 @@ def plot_trajectory(x, y, ax=None):
   else:
     return ax
 
-def plot_interactions(df, target_id, interactions, ax=None, figsize=(16, 10), distance=50):
+def plot_interactions(df, target_id, interactions, ax=None, figsize=(16, 10), distance=50, equal_ratio=True):
   if ax is None:
     fig, ax = plt.subplots(figsize=figsize)
 
@@ -62,7 +62,8 @@ def plot_interactions(df, target_id, interactions, ax=None, figsize=(16, 10), di
   ax.set_xlim(x_min, x_max)
   ax.set_ylim(y_min, y_max)
 
-  ax.set_aspect('equal')
+  if equal_ratio:
+    ax.set_aspect('equal')
 
   if ax is None:
     plt.show()
