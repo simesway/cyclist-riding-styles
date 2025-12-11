@@ -189,7 +189,7 @@ def detect_overtaking(
     t_z = float(ts[z])
     duration = t_end - t_start if t_start is not None and t_end is not None else None
 
-
+    f_min, f_max = start_idx or z, end_idx or z
     candidates.append(
       OvertakingManeuver(
         follower_id=int(f),
@@ -199,16 +199,16 @@ def detect_overtaking(
         t_end=t_end,
         duration=duration,
         left_side=lat[z] > 0,
-        long_distance_min=float(np.min(long[start:end+1])),
-        long_distance_max=float(np.max(long[start:end+1])),
-        lateral_offset_start=float(lat[start_idx]) if start_idx is not None else None,
-        lateral_offset_end=float(lat[end_idx]) if end_idx is not None else None,
-        lateral_offset_max=float(np.max(lat[start:end+1])),
+        long_distance_min=float(np.min(long[f_min:f_max+1])),
+        long_distance_max=float(np.max(long[f_min:f_max+1])),
+        lateral_offset_start=float(lat[f_min]),
+        lateral_offset_end=float(lat[f_max]),
+        lateral_offset_max=float(np.max(lat[f_min:f_max+1])),
         lateral_offset_cross=float(lat[z]),
-        follower_speed_mean=float(np.mean(v_f[start:end+1])),
-        leader_speed_mean=float(np.mean(v_l[start:end+1])),
-        speed_diff_mean=float(np.mean(np.abs(v_f[start:end+1] - v_l[start:end+1]))),
-        follower_acc_max=float(np.max(acc[start:end+1]))
+        follower_speed_mean=float(np.mean(v_f[f_min:f_max+1])),
+        leader_speed_mean=float(np.mean(v_l[f_min:f_max+1])),
+        speed_diff_mean=float(np.mean(np.abs(v_f[f_min:f_max+1] - v_l[f_min:f_max+1]))),
+        follower_acc_max=float(np.max(acc[f_min:f_max+1]))
       )
     )
 
