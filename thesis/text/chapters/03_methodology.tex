@@ -1,15 +1,41 @@
 \chapter{Methodology}
 
-Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet. Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet. Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet.  
+\section{Dataset}
 
-Duis autem vel eum iriure dolor in hendrerit in vulputate velit esse molestie consequat, vel illum dolore eu feugiat nulla facilisis at vero eros et accumsan et iusto odio dignissim qui blandit praesent luptatum zzril delenit augue duis dolore te feugait nulla facilisi. Lorem ipsum dolor sit amet, consectetuer adipiscing elit, sed diam nonummy nibh euismod tincidunt ut laoreet dolore magna aliquam erat volutpat.  
 
-Ut wisi enim ad minim veniam, quis nostrud exerci tation ullamcorper suscipit lobortis nisl ut aliquip ex ea commodo consequat. Duis autem vel eum iriure dolor in hendrerit in vulputate velit esse molestie consequat, vel illum dolore eu feugiat nulla facilisis at vero eros et accumsan et iusto odio dignissim qui blandit praesent luptatum zzril delenit augue duis dolore te feugait nulla facilisi.  
+\section{Interaction Retrieval}
+The Analysis includes the extraction of special maneuvers (following, overtaking), but also the calculation of safety measures between cyclists and other traffic participants (cyclists, cars, pedestrians). Therefore encounters between traffic participants have to be extracted from the trajectory dataset. An encounter is a pair of traffic participants that coexist in a single timestamp \cite{perez_castro_empirical_2025} within a certain distance \cite{mohammed_characterization_2019}.
 
-Nam liber tempor cum soluta nobis eleifend option congue nihil imperdiet doming id quod mazim placerat facer possim assum. Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet. Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet. Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet.  
+To efficiently index and search for potential trajectory encounters, a Spatio-Temporal R-Tree (STR-Tree) was used \cite{deng_trajectory_2011}, which serves as an optimized spatial indexing structure for querying spatial relationships between trajectories. 
 
-Duis autem vel eum iriure dolor in hendrerit in vulputate velit esse molestie consequat, vel illum dolore eu feugiat nulla facilisis at vero eros et accumsan et iusto odio dignissim qui blandit praesent luptatum zzril delenit augue duis dolore te feugait nulla facilisi. Lorem ipsum dolor sit amet, consectetuer adipiscing elit, sed diam nonummy nibh euismod tincidunt ut laoreet dolore magna aliquam erat volutpat.  
+Trajectories were initially simplified using the Douglas-Peucker algorithm \cite{zheng_trajectory_2015}, which reduces the number of trajectory points while maintaining the characteristic shape of the movement. This preprocessing step involves splitting trajectories into segments at the remaining critical points, effectively reducing computational overhead while preserving the fundamental geometric properties of the original trajectories.
 
-Ut wisi enim ad minim veniam, quis nostrud exerci tation ullamcorper suscipit lobortis nisl ut aliquip ex ea commodo consequat. Duis autem vel eum iriure dolor in hendrerit in vulputate velit esse molestie consequat, vel illum dolore eu feugiat nulla facilisis at vero eros et accumsan et iusto odio dignissim qui blandit praesent luptatum zzril delenit augue duis dolore te feugait nulla facilisi.  
+The simplified trajectories were then used to construct an STR-Tree, which enables efficient spatial querying and intersection detection. To manage computational resources, the analysis was constrained to small batches of cyclists, with the time window limited to the coexisting trajectories within each batch. For each target trajectory, a buffer zone was created to find trajectory segments that intersect these buffer zones. These candidates were additionally filtered:
 
-Nam liber tempor cum soluta nobis eleifend option congue nihil imperdiet doming id quod mazim placerat facer possim assum.
+\begin{enumerate}
+	\item \textbf{Distance Filtering:} Pointwise Euclidean distance was calculated between potential encounter pairs, retaining only interactions within a predefined proximity range.
+	\item \textbf{Speed-Based Filtering:} Interactions were further refined by considering the speed, maintaining only those exceeding the average walking speed of pedestrians \cite{feng_automatic_2023}.
+\end{enumerate}
+
+All encounters were additionally filtered by the three selection criteria from Kutsch et al. \cite{kutsch_analyzing_2025}:
+\begin{enumerate}
+	\item Distance Constraint: Identified encounters with at least one timestamp where the absolute distance between center points was less than 20 m, while ensuring all timestamps maintained a maximum distance of 40 m.
+	\item Temporal Criterion: Minimum 5-second trajectory overlap.
+	\item Movement Validation: Each trajectory moves at least 10m.
+	\item Heading Criterion: was used inside maneuver detection code
+\end{enumerate} 
+
+\section{Maneuvers}
+
+Most papers characterize a Following and Overtaking Maneuver by the longitudinal and lateral distances from the perspective of the initially following cyclist \cite{khan_characteristics_2001, kutsch_analyzing_2025, mocsari_analysis_2009, mohammed_characterization_2019}. By smoothing the longitudinal and lateral distances using a Gaussian filter of 0.6s yielded the best results for determining key points of a maneuver. 
+
+\subsection{Following}
+
+Compute longitudinal and lateral distances from both perspectives. Split into segments where longitudinal distance flips sign (cyclists change order). Treat each segment as a own interaction with consistent ordering (initially following cyclists stays following cyclist).
+Additional Spatial Constraints: Lateral distance always below 1m, Longitudinal distance between 1 and 30 meters.
+Temporal Constraints: Time Headway (THW) of a maximum of 6 seconds \cite{kutsch_analyzing_2025} and a minimum duration of 1s.
+A Directional Constraint of the relative heading being under 35 degrees in difference \cite{feng_automatic_2023, kutsch_analyzing_2025}.
+The candidates fulfilling all criteria for 13 consecutive timestamps (1 second) are labeled as Following Maneuvers.
+
+\subsection{Overtaking}
+
