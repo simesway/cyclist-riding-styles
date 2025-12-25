@@ -162,7 +162,7 @@ def detect_overtaking(
     )
 
     if start_idx is not None:
-      distance_check = np.all(np.abs(lat[start_idx:z-1] < max_lateral_distance))
+      distance_check = np.all(np.abs(lat[start_idx:z-1]) < max_lateral_distance)
       length_check = z - start_idx > min_frames
       monotony = np.all(long[start_idx:z-1] > 0)
       sanity_check = distance_check and length_check and monotony
@@ -172,7 +172,7 @@ def detect_overtaking(
         start_idx = max(start_idx, 0)
 
     if end_idx is not None:
-      distance_check = np.all(np.abs(lat[z+1:end_idx] < max_lateral_distance))
+      distance_check = np.all(np.abs(lat[z+1:end_idx]) < max_lateral_distance)
       monotony = np.all(long[z+1:end_idx] < 0)
       length_check = end_idx - z > min_frames
       sanity_check = distance_check and length_check and monotony
@@ -203,7 +203,7 @@ def detect_overtaking(
         long_distance_max=float(np.max(long[f_min:f_max+1])),
         lateral_offset_start=float(lat[f_min]),
         lateral_offset_end=float(lat[f_max]),
-        lateral_offset_max=float(np.max(lat[f_min:f_max+1])),
+        lateral_offset_max=float(np.max(np.abs(lat[f_min:f_max+1]))),
         lateral_offset_cross=float(lat[z]),
         follower_speed_mean=float(np.mean(v_f[f_min:f_max+1])),
         leader_speed_mean=float(np.mean(v_l[f_min:f_max+1])),
