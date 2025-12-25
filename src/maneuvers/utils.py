@@ -114,86 +114,74 @@ def merge_crossings(crossings, delta=12):
     return groups
 
 
-def pick_switch_idx(group, longitudinal):
-    """Pick the max |longitudinal| frame inside the group as switch."""
-    start = group[0]
-    end = group[-1] + 1
-    local = longitudinal[start:end]
-    return group[0] # first frame where the long < 0
+def pick_switch_idx(group, longitudinal, k=5):
+  best, best_len = group[0], -1
+  L = len(longitudinal)
+
+  for c in group:
+    end = min(c + k, L)
+    run = np.sign(longitudinal[c + 1:end])
+    score = np.sum(run < 0)
+    if score > best_len:
+      best, best_len = c, score
+
+  return best
 
 
-def extract_overtake_windows(ts, long_a, long_b, delta=15, k=25, max_frames=63) -> List[Dict]:
-    """
-    Extract overtaking windows from trajectories in the POV of the initial follower.
-    Each window spans from max |longitudinal| after previous crossing
-    to max |longitudinal| before next crossing.
-    """
-    L = len(long_a)
-    if L < 2:
-        return []
+def extract_overtake_windows(
+    ts, long_a, long_b,
+    delta=15, k=25, max_frames=63
+) -> List[dict]:
+  L = len(long_a)
+  if L < 2:
+    return []
 
-    # 1. raw zero crossings from both POVs
-    raw_a = find_positive_to_negative_crossings(long_a)
-    raw_b = find_positive_to_negative_crossings(long_b)
-    if len(raw_a) + len(raw_b) == 0:
-        return []
+  raw = np.unique(np.concatenate([
+    filter_spikes(long_a, find_positive_to_negative_crossings(long_a), k),
+    filter_spikes(long_b, find_positive_to_negative_crossings(long_b), k),
+  ]))
+  if len(raw) == 0:
+    return []
 
-    # 2. remove spikes
-    crossings_a = filter_spikes(long_a, raw_a, k)
-    crossings_b = filter_spikes(long_b, raw_b, k)
-    crossings = np.unique(np.concatenate([raw_a, raw_b]))
-    if len(crossings) == 0:
-        return []
+  groups = merge_crossings(raw, delta)
+  windows = []
 
-    # 3. merge nearby crossings into groups for switch index
-    groups = merge_crossings(crossings, delta)
+  for gi, g in enumerate(groups):
+    switch_idx = g[0]
+    switch_idx = int(switch_idx)
 
-    windows = []
+    prev_cross = groups[gi - 1][-1] if gi > 0 else 0
+    next_cross = groups[gi + 1][0] if gi < len(groups) - 1 else L - 1
 
-    last_switch = 0
+    prev_cross = int(prev_cross)
+    next_cross = int(next_cross)
 
-    for g in groups:
-      # pick switch index using long_a (just as a reference)
-      switch_idx = pick_switch_idx(g, long_a)
+    # decide POV at switch
+    if long_a[switch_idx - 1] > 0:
+      long_ref = long_a
+      follower, leader = "A", "B"
+    else:
+      long_ref = long_b
+      follower, leader = "B", "A"
 
-      # determine interval using neighboring crossings
-      idx_in_crossings = np.searchsorted(crossings, switch_idx)
-      prev_cross = last_switch
-      next_cross = L - 1
+    # extrema-based bounds
+    start_idx = prev_cross + int(np.argmax(np.abs(long_ref[prev_cross:switch_idx + 1])))
+    end_idx = switch_idx + int(np.argmax(np.abs(long_ref[switch_idx:next_cross + 1])))
 
-      # 1. determine initial follower for this window
-      # check A's POV first frame of window candidate
-      if long_a[switch_idx-1] > 0:
-        long_ref = long_a
-        follower, leader = "A", "B"
-      else:
-        long_ref = long_b
-        follower, leader = "B", "A"
+    # clamp to max_frames
+    half = max_frames // 2
+    start_idx = max(start_idx, switch_idx - half, 0)
+    end_idx = min(end_idx, switch_idx + half, L - 1)
 
-      # 2. compute start and end based on max |longitudinal| in this POV
-      local_start = long_ref[prev_cross:switch_idx + 1]
-      start_idx = prev_cross + int(np.argmax(np.abs(local_start)))
+    windows.append({
+      "center": switch_idx,
+      "start": int(start_idx),
+      "end": int(end_idx),
+      "ts": ts[start_idx:end_idx + 1],
+      "longitudinal": long_ref[start_idx:end_idx + 1],
+      "follower": follower,
+      "leader": leader,
+    })
 
-      local_end = long_ref[switch_idx:next_cross + 1]
-      end_idx = switch_idx + int(np.argmax(np.abs(local_end)))
+  return windows
 
-      # 3. limit window to max_frames
-      half_max = max_frames // 2
-      start_idx = max(0, switch_idx - half_max, start_idx)
-      end_idx = min(L - 1, switch_idx + half_max, end_idx)
-
-      # extract longitudinal for this POV
-      long_win = long_ref[start_idx:end_idx + 1]
-      ts_win = ts[start_idx:end_idx + 1]
-
-      windows.append({
-        "center": switch_idx,
-        "start": start_idx,
-        "end": end_idx,
-        "ts": ts_win,
-        "longitudinal": long_win,
-        "follower": follower,
-        "leader": leader
-      })
-
-    return windows
