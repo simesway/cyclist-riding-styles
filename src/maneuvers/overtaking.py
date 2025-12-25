@@ -35,17 +35,20 @@ class OvertakingManeuver:
 
 def compute_thresholds(lat_z: float, num_thresholds: int=5, min_thresh: float=0.05, global_max: float=1.2) -> List[float]:
   """Generate a set of logarithmic thresholds based on the lateral distance at the overtake center."""
-  upper_bound = min(abs(lat_z) + 1e-6, global_max)
+  upper_bound = np.clip(abs(lat_z), min_thresh, global_max)
+  if num_thresholds <= 1:
+    return [upper_bound]
+
   thresholds = np.logspace(
     np.log10(min_thresh),
     np.log10(upper_bound),
     num=num_thresholds
-  ).tolist()
+  )
 
-  if abs(lat_z) >= global_max:
-    return thresholds
+  if abs(lat_z) < global_max:
+    thresholds = thresholds[:-1]
 
-  return thresholds[:-1]
+  return thresholds.tolist()
 
 
 def detect_overtake_edges_threshold(
