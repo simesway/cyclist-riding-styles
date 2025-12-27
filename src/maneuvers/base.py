@@ -1,5 +1,8 @@
 from dataclasses import dataclass, asdict
-from typing import Optional
+from typing import Optional, Literal
+
+from maneuvers.utils import flatten_optional
+
 
 @dataclass
 class Maneuver:
@@ -45,6 +48,13 @@ class OvertakingManeuver(Maneuver):
   follower_acc_max: float
 
 
+@dataclass(frozen=True)
+class ManeuverMeta:
+  maneuver_id: int
+  maneuver_type: Literal["following", "overtaking"]
+  ego_id: int
+
+
 @dataclass
 class RidingFeatures:
   speed_mean: float
@@ -62,7 +72,7 @@ class InfrastructureFeatures:
 
 @dataclass
 class WindowRecord:
-  maneuver_id: int
+  meta: ManeuverMeta
   t_start: float
   t_end: float
   features: Optional[RidingFeatures] = None
@@ -70,19 +80,11 @@ class WindowRecord:
   infrastructure: Optional[InfrastructureFeatures] = None
 
   def flatten(self):
-    out = {
-      "maneuver_id": self.maneuver_id,
+    return {
+      **asdict(self.meta),
       "t_start": self.t_start,
       "t_end": self.t_end,
+      **flatten_optional(self.features, "ride", RidingFeatures),
+      **flatten_optional(self.environment, "env", EnvironmentFeatures),
+      **flatten_optional(self.infrastructure, "infra", InfrastructureFeatures),
     }
-    for attr_name in ["features", "environment", "infrastructure"]:
-      attr = getattr(self, attr_name)
-      if attr is not None:
-        out.update(asdict(attr))
-      else:
-        # fill missing keys with None
-        klass = self.__annotations__[attr_name].__args__[0]  # get dataclass type
-        for f in klass.__dataclass_fields__:
-          out[f] = None
-    return out
-

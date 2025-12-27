@@ -11,6 +11,15 @@ def save_maneuvers_to_csv(maneuvers, filepath):
   df = df.drop_duplicates()
   df.to_csv(filepath, index=False)
 
+def flatten_optional(obj, prefix: str, cls=None) -> dict:
+  if obj is not None:
+    return {f"{prefix}_{k}": v for k, v in asdict(obj).items()}
+
+  if cls is None:
+    return {}
+
+  return {f"{prefix}_{k}": None for k in cls.__dataclass_fields__}
+
 
 def get_lateral_longitudinal(a, b):
   """
