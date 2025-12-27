@@ -2,6 +2,9 @@ import numpy as np
 import pandas as pd
 from typing import List, Dict
 from data.utils import clean_heading
+from dataclasses import asdict
+
+from maneuvers.base import Maneuver
 
 
 def save_maneuvers_to_csv(maneuvers, filepath):
@@ -14,12 +17,18 @@ def save_maneuvers_to_csv(maneuvers, filepath):
 def flatten_optional(obj, prefix: str, cls=None) -> dict:
   if obj is not None:
     return {f"{prefix}_{k}": v for k, v in asdict(obj).items()}
-
   if cls is None:
     return {}
-
   return {f"{prefix}_{k}": None for k in cls.__dataclass_fields__}
 
+def slice_maneuver_trajectory(traj_df, maneuver: Maneuver):
+  """Returns ego trajectory dataframe for [t_start, t_end]"""
+  ego_traj = traj_df[traj_df["track_id"] == maneuver.ego_id]
+  ego_traj = ego_traj.sort_values("timestamp")
+  return ego_traj[
+    (ego_traj["timestamp"] >= maneuver.t_start) &
+    (ego_traj["timestamp"] <= maneuver.t_end)
+  ].copy()
 
 def get_lateral_longitudinal(a, b):
   """
