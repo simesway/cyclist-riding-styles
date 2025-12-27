@@ -2,35 +2,11 @@ import numpy as np
 import pandas as pd
 from tqdm import tqdm
 from typing import List, Tuple, Optional
-from dataclasses import dataclass
 
 from data.smoothing import smooth
 from features.vehicle_dynamics import velocity, acceleration
+from maneuvers.base import OvertakingManeuver
 from maneuvers.utils import get_lateral_longitudinal, extract_overtake_windows
-
-
-
-@dataclass
-class OvertakingManeuver:
-  follower_id: int
-  leader_id: int
-  t_start: float
-  t_cross: float
-  t_end: float
-  duration: float
-  left_side: bool
-
-  long_distance_min: float
-  long_distance_max: float
-  lateral_offset_start: float
-  lateral_offset_end: float
-  lateral_offset_max: float
-  lateral_offset_cross: float
-
-  follower_speed_mean: float
-  leader_speed_mean: float
-  speed_diff_mean: float
-  follower_acc_max: float
 
 
 def compute_thresholds(lat_z: float, num_thresholds: int=5, min_thresh: float=0.05, global_max: float=1.2) -> List[float]:
@@ -195,8 +171,8 @@ def detect_overtaking(
     f_min, f_max = start_idx or z, end_idx or z
     candidates.append(
       OvertakingManeuver(
-        follower_id=int(f),
-        leader_id=int(l),
+        id = None,
+        ego_id=int(f), other_id=int(l),
         t_start=t_start,
         t_cross=t_z,
         t_end=t_end,
@@ -231,6 +207,7 @@ def get_overtaking_maneuvers(traj_df: pd.DataFrame, interactions: pd.Series, con
   Extract all overtaking maneuvers from trajectory data and interaction metadata.
   """
   maneuvers = []
+  next_id = 0
   for _, interaction in tqdm(interactions.iterrows(), total=interactions.shape[0]):
     a, b = interaction["track_id"], interaction["other_id"]
 
@@ -240,7 +217,9 @@ def get_overtaking_maneuvers(traj_df: pd.DataFrame, interactions: pd.Series, con
       (traj_pair["timestamp"] <= interaction["t_end"]+10)
     ]
     result = detect_overtaking(window, interaction, **config)
-    if result is not None:
+    if result:
+      result.id = next_id
+      next_id += 1
       maneuvers.append(result)
 
   return maneuvers

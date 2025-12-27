@@ -2,35 +2,13 @@ import numpy as np
 import pandas as pd
 from typing import List, Tuple
 from tqdm import tqdm
-from dataclasses import dataclass
 
 from data.smoothing import smooth
 from data.utils import clean_heading
 from features.safety_metrics import time_headway
 from features.vehicle_dynamics import longitudinal_velocity, velocity
+from maneuvers.base import FollowingManeuver
 from maneuvers.utils import get_lateral_longitudinal, detect_sign_flips
-
-
-@dataclass
-class FollowingManeuver:
-  follower_id: int
-  leader_id: int
-  t_start: float
-  t_end: float
-  duration: float
-
-  long_distance_min: float
-  long_distance_mean: float
-  lateral_offset_mean: float
-
-  thw_mean: float
-  thw_min: float
-
-  follower_speed_mean: float
-  leader_speed_mean: float
-  speed_diff_mean: float
-
-  rel_heading_std: float
 
 
 def get_true_intervals(bool_array):
@@ -148,7 +126,8 @@ def detect_following(
       local_long = long[start:end]
       maneuvers.append(
         FollowingManeuver(
-          follower_id=int(f), leader_id=int(l),
+          id = None,
+          ego_id=int(f), other_id=int(l),
           t_start=t0, t_end=t1, duration=t1-t0,
           long_distance_min=float(np.min(local_long)),
           long_distance_mean=float(np.mean(local_long)),
@@ -172,6 +151,7 @@ def get_following_maneuvers(traj_df: pd.DataFrame, interactions: pd.Series, conf
   Extract all following maneuvers from trajectory data and interaction metadata.
   """
   maneuvers = []
+  next_id = 0
   for _, interaction in tqdm(interactions.iterrows(), total=interactions.shape[0]):
     a, b = interaction["track_id"], interaction["other_id"]
 
@@ -181,7 +161,10 @@ def get_following_maneuvers(traj_df: pd.DataFrame, interactions: pd.Series, conf
       (traj_pair["timestamp"] <= interaction["t_end"])
     ]
     result = detect_following(window, interaction, **config)
-    if result is not None:
-      maneuvers.extend(result)
+    if result:
+      for m in result:
+        m.id = next_id
+        next_id += 1
+        maneuvers.append(m)
 
   return maneuvers
