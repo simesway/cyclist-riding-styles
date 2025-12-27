@@ -61,7 +61,7 @@ class RidingFeatures:
 
 
 @dataclass
-class EnvironmentFeatures:
+class TrafficFeatures:
   thw_mean: float
 
 
@@ -76,7 +76,7 @@ class WindowRecord:
   t_start: float
   t_end: float
   features: Optional[RidingFeatures] = None
-  environment: Optional[EnvironmentFeatures] = None
+  environment: Optional[TrafficFeatures] = None
   infrastructure: Optional[InfrastructureFeatures] = None
 
   def flatten(self):
@@ -85,6 +85,6 @@ class WindowRecord:
       "t_start": self.t_start,
       "t_end": self.t_end,
       **flatten_optional(self.features, "ride", RidingFeatures),
-      **flatten_optional(self.environment, "env", EnvironmentFeatures),
+      **flatten_optional(self.environment, "env", TrafficFeatures),
       **flatten_optional(self.infrastructure, "infra", InfrastructureFeatures),
     }
