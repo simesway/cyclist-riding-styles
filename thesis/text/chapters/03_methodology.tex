@@ -27,15 +27,77 @@ All encounters were additionally filtered by the three selection criteria from K
 
 \section{Maneuvers}
 
-Most papers characterize a Following and Overtaking Maneuver by the longitudinal and lateral distances from the perspective of the initially following cyclist \cite{khan_characteristics_2001, kutsch_analyzing_2025, mocsari_analysis_2009, mohammed_characterization_2019}. By smoothing the longitudinal and lateral distances using a Gaussian filter of 0.6s yielded the best results for determining key points of a maneuver. 
+For a pair of encountering vehicles, trajectories were synchronized by timestamp and the lateral and longitudinal distances are computed relative to a chosen vehicle's frame of reference:
+$$formula?$$
+Most papers characterize a Following and Overtaking Maneuver by the longitudinal and lateral distances from the perspective of the initially following cyclist \cite{khan_characteristics_2001, kutsch_analyzing_2025, mocsari_analysis_2009, mohammed_characterization_2019}. This transformation ensures that subsequent analysis is invariant to global orientation and focuses on relative motion.
+By smoothing the longitudinal and lateral distances using a Gaussian filter of 0.6s yielded the best results for determining key points of a maneuver. 
 
 \subsection{Following}
 
-Compute longitudinal and lateral distances from both perspectives. Split into segments where longitudinal distance flips sign (cyclists change order). Treat each segment as a own interaction with consistent ordering (initially following cyclists stays following cyclist).
+The longitudinal displacement signal is analyzed for sign flips, which indicate transitions in relative positioning \cite{hoogendoorn_bicycle_2016, mohammed_characterization_2019}. The trajectory is divided into contiguous intervals between these zero crossings to focus on periods of consistent follower-leader ordering.
+
 Additional Spatial Constraints: Lateral distance always below 1m, Longitudinal distance between 1 and 30 meters.
 Temporal Constraints: Time Headway (THW) of a maximum of 6 seconds \cite{kutsch_analyzing_2025} and a minimum duration of 1s.
 A Directional Constraint of the relative heading being under 35 degrees in difference \cite{feng_automatic_2023, kutsch_analyzing_2025}.
 The candidates fulfilling all criteria for 13 consecutive timestamps (1 second) are labeled as Following Maneuvers.
 
 \subsection{Overtaking}
+Longitudinal signals are analyzed to detect sign flips from positive to negative, which indicate potential overtake events \cite{kutsch_analyzing_2025, mohammed_characterization_2019}. To improve robustness, spurious flips are filtered by requiring sign persistence over multiple frames. Nearby events are merged to handle fluctuations around 0 and avoid overcounting.
+Each candidate crossing defines a window of interest, centered on the longitudinal sign flip. The window is refined by:
 
+\begin{compactitem}
+	\item Selecting start and end points based on local maxima of the longitudinal distance.
+	\item Clamping window size to a maximum frame limit to ensure temporal consistency.
+\end{compactitem}
+
+The algorithm to find maneuver edges proposed by Kutsch et al. \cite{kutsch_analyzing_2025} was applied with various thresholds to these windows of interest, but it was found that this algorithm is very sensible for noise and thus difficult to fine tune in a pipeline that should be mostly automatic.
+Therefore a own approach was found, that is supposed to be more robust to noise in datasets, but also at the cost of non optimal edge detection. This approach was preferred because of its simplicity and making the edge detection more robust on varying datasets, since fine tuning the hyperparameters is not necessary. Kutsch et al. also manually checked and verified the candidates for each hyperparameter, a process that is very costly and not possible within a automatic pipeline.
+
+The process:
+The absolute lateral displacement signal is used to determine edges of the maneuver, applying a logarithmic set of thresholds. This identifies when the overtaking vehicle departs from and returns to its lane or lateral baseline. 
+Candidate maneuvers are validated using:
+\begin{compactitem}
+	\item Monotonicity checks on longitudinal displacement.
+	\item Distance constraints on lateral offset (<3m and >1m) \cite{perez_castro_empirical_2025}.
+	\item Duration thresholds to remove extremely short events.
+\end{compactitem}
+For validated candidates, the module extracts descriptive statistics \cite{khan_characteristics_2001}:
+\begin{compactitem}
+	\item Temporal features: start, crossing, and end timestamps; duration.
+	\item Spatial features: minimum, maximum longitudinal distances; lateral offsets at key points.
+	\item Kinematic features: mean speeds of follower and leader, relative speed, maximum follower acceleration.
+\end{compactitem}
+
+\section{Hierarchical Riding Style Identification}
+
+\subsection*{Level 1: Local Riding Behaviour (Window Level)}
+\label{meth:level1}
+
+volatility as a measure of unsafe driving \cite{arvin_how_2019, mohammadnazar_classifying_2021}
+
+Local riding behaviour is captured using fixed-length sliding windows of 1 s with overlap \cite{mohammadnazar_classifying_2021}, a common approach for modeling short-term driving and riding dynamics while preserving temporal continuity. Within each window, magnitude- \cite{enev_automobile_2016} and volatility-based features are extracted from kinematic signals.
+
+Magnitude features describe the intensity of motion and include speed, longitudinal acceleration, and yaw rate. For each of these signals, minimum and maximum values within the window are computed.
+
+Volatility features capture short-term variability and dynamic fluctuations. They are derived from speed, longitudinal and lateral acceleration, and rotational fluctuations. For each signal, the mean, mean absolute deviation, coefficient of variation, and quartile coefficient of variation are calculated.
+
+All features are normalized, and magnitude and volatility features are weighted equally. Feature relevance is assessed using feature selection techniques and principal component analysis. The resulting window-level feature vectors are clustered jointly across all maneuvers and infrastructure types. 
+
+Yarlagadda and Pawar \cite{yarlagadda_exploring_2022} performed a two level clustering analysis seperating magnitude and volatility features.  In this paper magnitude and volatility features are clustered together, which allows the model to learn characteristic couplings between riding intensity and variability, yielding a set of local riding regimes that are globally consistent.
+
+\subsection*{Level 2: Maneuver-Level Representation}
+
+At the maneuver level, each maneuver is represented as an aggregation of the previously identified local regimes. Specifically, the distribution of regimes within a maneuver is computed as the proportion of time spent in each regime. In addition, transition frequencies between regimes are extracted to capture dynamic changes in riding behaviour over the course of a maneuver.
+
+Following the state-based view of human behavior proposed by Pentland and Liu \cite{pentland_modeling_1999}, riding behavior is represented as transitions between a finite set of local regimes, where maneuvers emerge from the temporal composition of these regimes rather than from raw kinematic signals alone.
+
+These regime-based descriptors are complemented by maneuver-level features such as mean and 90th percentile speed, minimum, maximum, and standard deviation of lateral displacement, mean time headway, relative speed, and further context-dependent variables. Together, these features provide a compact yet expressive summary of how a maneuver is executed.
+
+\subsection*{Level 3: Infrastructure-Conditioned Analysis}
+
+Features describing the infrastructure and environment are incorporated at the window level \ref{meth:level1} in the feature vector. Each window inherits an infrastructure label corresponding to the road or path segment on which it occurs, while the regime definitions learned at Level 1 remain fixed. This makes the analysis of local riding behavor
+
+For each maneuver, regime statistics are then computed separately for each infrastructure type, such as the proportion of time spent in each regime or regime transition patterns conditioned on infrastructure. This design enables a direct comparison of riding behaviour across different infrastructures while preserving a common behavioural reference frame, which is essential for isolating infrastructure-induced adaptations from intrinsic riding style.
+features:
+collision avoidance and lane deviation \cite{kuderer_learning_2015}
+traffic flow state key factor influencing style \cite{ren_lane-change_2025}
