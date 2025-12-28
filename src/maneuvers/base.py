@@ -91,3 +91,19 @@ class WindowRecord:
       **flatten_optional(self.environment, "env", TrafficFeatures),
       **flatten_optional(self.infrastructure, "infra", InfrastructureFeatures),
     }
+
+
+class ManeuverSlicer:
+  """Extracts ego (and other) trajectory for a given maneuver."""
+  @staticmethod
+  def slice(traj_df, maneuver: Maneuver):
+    """Returns ego (and other) trajectory df between t_start and t_end."""
+    ids = [maneuver.ego_id]
+    if isinstance(maneuver, Interaction):
+      ids.append(maneuver.other_id)
+    ego_traj = traj_df[traj_df["track_id"].isin(ids)]
+    ego_traj = ego_traj.sort_values("timestamp")
+    return ego_traj[
+      (ego_traj["timestamp"] >= maneuver.t_start) &
+      (ego_traj["timestamp"] <= maneuver.t_end)
+    ].copy()

@@ -21,14 +21,6 @@ def flatten_optional(obj, prefix: str, cls=None) -> dict:
     return {}
   return {f"{prefix}_{k}": None for k in cls.__dataclass_fields__}
 
-def slice_maneuver_trajectory(traj_df, maneuver: Maneuver):
-  """Returns ego trajectory dataframe for [t_start, t_end]"""
-  ego_traj = traj_df[traj_df["track_id"] == maneuver.ego_id]
-  ego_traj = ego_traj.sort_values("timestamp")
-  return ego_traj[
-    (ego_traj["timestamp"] >= maneuver.t_start) &
-    (ego_traj["timestamp"] <= maneuver.t_end)
-  ].copy()
 
 def get_lateral_longitudinal(a, b):
   """
