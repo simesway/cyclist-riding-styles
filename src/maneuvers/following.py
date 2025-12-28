@@ -1,12 +1,12 @@
 import numpy as np
 import pandas as pd
-from typing import List, Tuple
+from typing import List
 from tqdm import tqdm
 
 from data.smoothing import smooth
 from data.utils import clean_heading
 from features.safety_metrics import time_headway
-from features.vehicle_dynamics import longitudinal_velocity, velocity
+from features.vehicle_dynamics import longitudinal_velocity, speed
 from maneuvers.base import FollowingManeuver
 from maneuvers.utils import get_lateral_longitudinal, detect_sign_flips
 
@@ -56,10 +56,10 @@ def detect_following(
 
   ha = clean_heading(ta["rotation_z"].to_numpy())
   hb = clean_heading(tb["rotation_z"].to_numpy())
-  v_a = velocity(ta).to_numpy()
-  v_b = velocity(tb).to_numpy()
-  v_long_a = longitudinal_velocity(ta).to_numpy()
-  v_long_b = longitudinal_velocity(tb).to_numpy()
+  v_a = speed(ta)
+  v_b = speed(tb)
+  v_long_a = longitudinal_velocity(ta)
+  v_long_b = longitudinal_velocity(tb)
   v_long_a_smooth = smooth(v_long_a, 0.2)
   v_long_b_smooth = smooth(v_long_b, 0.2)
 

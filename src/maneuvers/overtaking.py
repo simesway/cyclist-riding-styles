@@ -4,7 +4,7 @@ from tqdm import tqdm
 from typing import List, Tuple, Optional
 
 from data.smoothing import smooth
-from features.vehicle_dynamics import velocity, acceleration
+from features.vehicle_dynamics import speed, acceleration
 from maneuvers.base import OvertakingManeuver
 from maneuvers.utils import get_lateral_longitudinal, extract_overtake_windows
 
@@ -100,10 +100,10 @@ def detect_overtaking(
   a_lat_smooth = smooth(a_lateral, 0.5)
   b_lat_smooth = smooth(b_lateral, 0.5)
 
-  v_a = velocity(a).to_numpy()
-  v_b = velocity(b).to_numpy()
+  v_a = speed(a)
+  v_b = speed(b)
 
-  acc_a, acc_b = acceleration(a).to_numpy(), acceleration(b).to_numpy()
+  acc_a, acc_b = acceleration(a), acceleration(b)
 
 
   if ts is None:

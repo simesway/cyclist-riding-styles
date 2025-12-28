@@ -1,46 +1,57 @@
 import numpy as np
 import pandas as pd
 
-def velocity(df: pd.DataFrame) -> pd.Series:
-  """Compute total velocity magnitude."""
-  return np.hypot(df['velocity_x'], df['velocity_y'])
 
-def longitudinal_velocity(df: pd.DataFrame) -> pd.Series:
+def speed(df: pd.DataFrame) -> np.ndarray:
+  vx = df["velocity_x"].to_numpy()
+  vy = df["velocity_y"].to_numpy()
+  return np.hypot(vx, vy)
+
+
+def acceleration(df: pd.DataFrame) -> np.ndarray:
+  ax = df["acceleration_x"].to_numpy()
+  ay = df["acceleration_y"].to_numpy()
+  return np.hypot(ax, ay)
+
+
+def longitudinal_velocity(df: pd.DataFrame) -> np.ndarray:
+  yaw = df["rotation_z"].to_numpy()
+  vx = df["velocity_x"].to_numpy()
+  vy = df["velocity_y"].to_numpy()
+  return vx * np.cos(yaw) + vy * np.sin(yaw)
+
+
+def lateral_velocity(df: pd.DataFrame) -> np.ndarray:
+  yaw = df["rotation_z"].to_numpy()
+  vx = df["velocity_x"].to_numpy()
+  vy = df["velocity_y"].to_numpy()
+  return -vx * np.sin(yaw) + vy * np.cos(yaw)
+
+
+def longitudinal_acceleration(df: pd.DataFrame) -> np.ndarray:
+  yaw = df["rotation_z"].to_numpy()
+  ax = df["acceleration_x"].to_numpy()
+  ay = df["acceleration_y"].to_numpy()
+  return ax * np.cos(yaw) + ay * np.sin(yaw)
+
+
+def lateral_acceleration(df: pd.DataFrame) -> np.ndarray:
+  yaw = df["rotation_z"].to_numpy()
+  ax = df["acceleration_x"].to_numpy()
+  ay = df["acceleration_y"].to_numpy()
+  return -ax * np.sin(yaw) + ay * np.cos(yaw)
+
+
+def yaw_rate(df: pd.DataFrame) -> np.ndarray:
   """
-  Compute longitudinal velocity along the vehicle's forward direction.
+  Compute yaw rate (angular velocity around vertical axis).
+  Assumes 'rotation_z' in radians and evenly spaced timestamps.
   """
-  cos_yaw = np.cos(df['rotation_z'])
-  sin_yaw = np.sin(df['rotation_z'])
-  return df['velocity_x'] * cos_yaw + df['velocity_y'] * sin_yaw
+  yaw = df["rotation_z"].to_numpy()
+  t = df["t"].to_numpy()  # time in seconds
 
+  dyaw = np.diff(yaw, prepend=yaw[0])
+  dt = np.diff(t, prepend=t[0])
+  dt[dt == 0] = np.nan  # avoid division by zero
 
-def lateral_velocity(df: pd.DataFrame) -> pd.Series:
-  """
-  Compute lateral velocity perpendicular to the vehicle's forward direction.
-  """
-  cos_yaw = np.cos(df['rotation_z'])
-  sin_yaw = np.sin(df['rotation_z'])
-  return -df['velocity_x'] * sin_yaw + df['velocity_y'] * cos_yaw
-
-
-def acceleration(df: pd.DataFrame) -> pd.Series:
-  """Compute total acceleration magnitude."""
-  return np.hypot(df['acceleration_x'], df['acceleration_y'])
-
-
-def longitudinal_acceleration(df: pd.DataFrame) -> pd.Series:
-  """
-  Compute longitudinal acceleration along the vehicle's forward direction.
-  """
-  cos_yaw = np.cos(df['rotation_z'])
-  sin_yaw = np.sin(df['rotation_z'])
-  return df['acceleration_x'] * cos_yaw + df['acceleration_y'] * sin_yaw
-
-
-def lateral_acceleration(df: pd.DataFrame) -> pd.Series:
-  """
-  Compute lateral acceleration perpendicular to the vehicle's forward direction.
-  """
-  cos_yaw = np.cos(df['rotation_z'])
-  sin_yaw = np.sin(df['rotation_z'])
-  return -df['acceleration_x'] * sin_yaw + df['acceleration_y'] * cos_yaw
+  return dyaw / dt
