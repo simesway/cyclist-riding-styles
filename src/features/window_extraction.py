@@ -2,7 +2,7 @@ from typing import List, Tuple
 import pandas as pd
 
 from data.utils import apply_time_window
-from maneuvers.base import RidingFeatures, InfrastructureFeatures, TrafficFeatures, Maneuver
+from features.FeatureExtractor import TrafficFeatureExtractor, InfrastructureFeatureExtractor, RidingFeatureExtractor
 
 
 class SlidingWindows:
@@ -41,19 +41,16 @@ class SlidingWindows:
     return windows
 
 
-def extract_riding_features(window_df) -> RidingFeatures:
-  """Extracts local riding behavior features"""
-  pass
-
-def infer_infrastructure_features(window_df) -> InfrastructureFeatures:
-  """Derives infrastructure features for the window"""
-  pass
-
-
 class WindowBuilder:
   """Builds WindowRecord objects for a maneuver"""
   def __init__(
     self,
-
+    window_extractor: SlidingWindows,
+    riding_extractor: RidingFeatureExtractor,
+    traffic_extractor: TrafficFeatureExtractor,
+    infra_extractor: InfrastructureFeatureExtractor
   ):
-    pass
+    self.window_extractor = window_extractor
+    self.riding_extractor = riding_extractor
+    self.traffic_extractor = traffic_extractor
+    self.infra_extractor = infra_extractor
