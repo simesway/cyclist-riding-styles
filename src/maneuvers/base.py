@@ -15,10 +15,14 @@ class Maneuver:
   def flatten(self):
     return asdict(self)
 
+
 @dataclass
-class FollowingManeuver(Maneuver):
+class Interaction(Maneuver):
   other_id: int
 
+
+@dataclass
+class FollowingManeuver(Interaction):
   long_distance_min: float
   long_distance_mean: float
   lateral_offset_mean: float
@@ -31,8 +35,7 @@ class FollowingManeuver(Maneuver):
 
 
 @dataclass
-class OvertakingManeuver(Maneuver):
-  other_id: int
+class OvertakingManeuver(Interaction):
   t_cross: float
 
   left_side: bool
