@@ -1,3 +1,4 @@
+from abc import ABC, abstractmethod
 from dataclasses import dataclass, asdict
 from typing import Optional, Literal
 
@@ -5,13 +6,20 @@ from data.utils import apply_time_window
 from maneuvers.utils import flatten_optional
 
 
+ManeuverType = Literal["interaction", "following", "overtaking"]
+
 @dataclass
-class Maneuver:
+class Maneuver(ABC):
   id: int | None
   ego_id: int
   t_start: float
   t_end: float
   duration: float
+
+  @property
+  @abstractmethod
+  def maneuver_type(self) -> ManeuverType:
+    ...
 
   def flatten(self):
     return asdict(self)
@@ -20,6 +28,10 @@ class Maneuver:
 @dataclass
 class Interaction(Maneuver):
   other_id: int
+
+  @property
+  def maneuver_type(self) -> Literal["interaction"]:
+    return "interaction"
 
 
 @dataclass
@@ -33,6 +45,10 @@ class FollowingManeuver(Interaction):
   leader_speed_mean: float
   speed_diff_mean: float
   rel_heading_std: float
+
+  @property
+  def maneuver_type(self) -> Literal["following"]:
+    return "following"
 
 
 @dataclass
@@ -51,11 +67,15 @@ class OvertakingManeuver(Interaction):
   speed_diff_mean: float
   follower_acc_max: float
 
+  @property
+  def maneuver_type(self) -> Literal["overtaking"]:
+    return "overtaking"
+
 
 @dataclass(frozen=True)
 class ManeuverMeta:
   maneuver_id: int
-  maneuver_type: Literal["following", "overtaking"]
+  maneuver_type: ManeuverType
   ego_id: int
 
 
@@ -79,8 +99,8 @@ class WindowRecord:
   meta: ManeuverMeta
   t_start: float
   t_end: float
-  features: Optional[RidingFeatures] = None
-  environment: Optional[TrafficFeatures] = None
+  riding: Optional[RidingFeatures] = None
+  traffic: Optional[TrafficFeatures] = None
   infrastructure: Optional[InfrastructureFeatures] = None
 
   def flatten(self):
@@ -88,8 +108,8 @@ class WindowRecord:
       **asdict(self.meta),
       "t_start": self.t_start,
       "t_end": self.t_end,
-      **flatten_optional(self.features, "ride", RidingFeatures),
-      **flatten_optional(self.environment, "env", TrafficFeatures),
+      **flatten_optional(self.riding, "ride", RidingFeatures),
+      **flatten_optional(self.traffic, "env", TrafficFeatures),
       **flatten_optional(self.infrastructure, "infra", InfrastructureFeatures),
     }
 
