@@ -3,6 +3,7 @@ import pandas as pd
 
 from data.utils import apply_time_window
 from features.FeatureExtractor import TrafficFeatureExtractor, InfrastructureFeatureExtractor, RidingFeatureExtractor
+from maneuvers.base import WindowRecord, Maneuver, ManeuverSlicer, ManeuverMeta
 
 
 class SlidingWindows:
@@ -54,3 +55,25 @@ class WindowBuilder:
     self.riding_extractor = riding_extractor
     self.traffic_extractor = traffic_extractor
     self.infra_extractor = infra_extractor
+
+  def build_for_maneuver(self, traj_df: pd.DataFrame, maneuver: Maneuver) -> List[WindowRecord]:
+    maneuver_df = ManeuverSlicer.slice(traj_df, maneuver)
+    windows = self.window_extractor.extract(maneuver_df)
+
+    meta = ManeuverMeta(
+      maneuver_id=maneuver.id,
+      maneuver_type=maneuver.maneuver_type,
+      ego_id=maneuver.ego_id,
+    )
+    records = []
+    for t_start, t_end, window_df in windows:
+      record = WindowRecord(
+        meta=meta,
+        t_start=t_start,
+        t_end=t_end,
+        riding=self.riding_extractor.extract(window_df),
+        traffic=self.traffic_extractor.extract(window_df, maneuver=maneuver),
+        infrastructure=self.infra_extractor.extract(window_df)
+      )
+      records.append(record)
+    return records
