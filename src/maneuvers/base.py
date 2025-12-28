@@ -1,6 +1,7 @@
 from dataclasses import dataclass, asdict
 from typing import Optional, Literal
 
+from data.utils import apply_time_window
 from maneuvers.utils import flatten_optional
 
 
@@ -103,7 +104,4 @@ class ManeuverSlicer:
       ids.append(maneuver.other_id)
     ego_traj = traj_df[traj_df["track_id"].isin(ids)]
     ego_traj = ego_traj.sort_values("timestamp")
-    return ego_traj[
-      (ego_traj["timestamp"] >= maneuver.t_start) &
-      (ego_traj["timestamp"] <= maneuver.t_end)
-    ].copy()
+    return apply_time_window(ego_traj, maneuver.t_start, maneuver.t_end)

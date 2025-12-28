@@ -8,9 +8,9 @@ def get_time_window(df: pd.DataFrame, traj_ids: List[int]) -> Tuple[int, int]:
   return subset["timestamp"].min(), subset["timestamp"].max()
 
 
-def apply_time_window(df: pd.DataFrame, t_start: int=None, t_end: int=None, t_col="timestamp") -> pd.DataFrame:
+def apply_time_window(df: pd.DataFrame, t_start: float=None, t_end: float=None, t_col="timestamp") -> pd.DataFrame:
   mask = df[t_col].between(t_start, t_end, inclusive="both")
-  return df[mask]
+  return df[mask].copy()
 
 
 def clean_heading(h_raw: np.ndarray) -> np.ndarray:
