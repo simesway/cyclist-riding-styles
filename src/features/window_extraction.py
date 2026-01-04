@@ -2,7 +2,8 @@ from typing import List, Tuple
 import pandas as pd
 
 from data.utils import apply_time_window
-from features.FeatureExtractor import TrafficFeatureExtractor, InfrastructureFeatureExtractor, RidingFeatureExtractor
+from features.FeatureExtractor import TrafficFeatureExtractor, InfrastructureFeatureExtractor, RidingFeatureExtractor, NullExtractor
+from features.vehicle_dynamics import speed, acceleration, longitudinal_acceleration, lateral_acceleration
 from maneuvers.base import WindowRecord, Maneuver, ManeuverSlicer, ManeuverMeta
 
 
@@ -47,17 +48,26 @@ class WindowBuilder:
   def __init__(
     self,
     window_extractor: SlidingWindows,
-    riding_extractor: RidingFeatureExtractor,
-    traffic_extractor: TrafficFeatureExtractor,
-    infra_extractor: InfrastructureFeatureExtractor
+    riding_extractor: RidingFeatureExtractor | NullExtractor,
+    traffic_extractor: TrafficFeatureExtractor | NullExtractor,
+    infra_extractor: InfrastructureFeatureExtractor | NullExtractor,
   ):
     self.window_extractor = window_extractor
     self.riding_extractor = riding_extractor
     self.traffic_extractor = traffic_extractor
     self.infra_extractor = infra_extractor
 
+  def infer_features(self, maneuver_df: pd.DataFrame) -> pd.DataFrame:
+    df = maneuver_df.copy()
+    df["speed"] = pd.Series(speed(df), index=df.index)
+    df["acceleration"] = pd.Series(acceleration(df), index=df.index)
+    df["long_acc"] = pd.Series(longitudinal_acceleration(df), index=df.index)
+    df["lat_acc"] = pd.Series(lateral_acceleration(df), index=df.index)
+    return df
+
   def build_for_maneuver(self, traj_df: pd.DataFrame, maneuver: Maneuver) -> List[WindowRecord]:
     maneuver_df = ManeuverSlicer.slice(traj_df, maneuver)
+    maneuver_df = self.infer_features(maneuver_df)
     windows = self.window_extractor.extract(maneuver_df)
 
     meta = ManeuverMeta(
@@ -67,13 +77,14 @@ class WindowBuilder:
     )
     records = []
     for t_start, t_end, window_df in windows:
-      record = WindowRecord(
-        meta=meta,
-        t_start=t_start,
-        t_end=t_end,
-        riding=self.riding_extractor.extract(window_df),
-        traffic=self.traffic_extractor.extract(window_df, maneuver=maneuver),
-        infrastructure=self.infra_extractor.extract(window_df)
+      records.append(
+        WindowRecord(
+          meta=meta,
+          t_start=t_start,
+          t_end=t_end,
+          riding=self.riding_extractor.extract(window_df),
+          traffic=self.traffic_extractor.extract(window_df, maneuver=maneuver),
+          infrastructure=self.infra_extractor.extract(window_df)
+        )
       )
-      records.append(record)
     return records
