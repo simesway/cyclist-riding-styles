@@ -4,7 +4,8 @@ from abc import ABC, abstractmethod
 from typing import Generic, TypeVar
 
 from features.volatility import stats_acc, stats_basic
-from maneuvers.base import RidingFeatures, TrafficFeatures, Maneuver, InfrastructureFeatures
+from maneuvers.base import Maneuver
+from features.base import RidingFeatures, TrafficFeatures, InfrastructureFeatures
 
 T = TypeVar("T")
 
