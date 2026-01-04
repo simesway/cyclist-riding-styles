@@ -1,5 +1,6 @@
 from typing import List, Tuple
 import pandas as pd
+from tqdm import tqdm
 
 from data.utils import apply_time_window
 from features.FeatureExtractor import TrafficFeatureExtractor, InfrastructureFeatureExtractor, RidingFeatureExtractor, NullExtractor
@@ -88,3 +89,11 @@ class WindowBuilder:
         )
       )
     return records
+
+  def collect_windows(self, traj_df: pd.DataFrame, maneuver: List[Maneuver]) -> List[WindowRecord]:
+    all_windows = []
+    for maneuver in tqdm(maneuver, total=len(maneuver)):
+      windows = self.build_for_maneuver(traj_df, maneuver)
+      all_windows.extend(windows)
+
+    return all_windows
