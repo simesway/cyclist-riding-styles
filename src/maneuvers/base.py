@@ -103,6 +103,7 @@ class WindowRecord:
   riding: Optional[RidingFeatures] = None
   traffic: Optional[TrafficFeatures] = None
   infrastructure: Optional[InfrastructureFeatures] = None
+  local_regime: Optional[int] = None
 
   def flatten(self):
     return {
