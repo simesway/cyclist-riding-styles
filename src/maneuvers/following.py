@@ -167,4 +167,4 @@ def get_following_maneuvers(traj_df: pd.DataFrame, interactions: pd.Series, conf
         next_id += 1
         maneuvers.append(m)
 
-  return maneuvers
+  return list(set(maneuvers))

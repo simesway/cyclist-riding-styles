@@ -222,4 +222,4 @@ def get_overtaking_maneuvers(traj_df: pd.DataFrame, interactions: pd.Series, con
       next_id += 1
       maneuvers.append(result)
 
-  return maneuvers
+  return list(set(maneuvers))

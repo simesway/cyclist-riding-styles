@@ -9,7 +9,7 @@ from maneuvers.utils import flatten_optional
 
 ManeuverType = Literal["interaction", "following", "overtaking"]
 
-@dataclass
+@dataclass(eq=False)
 class Maneuver(ABC):
   id: int | None
   ego_id: int
@@ -25,8 +25,20 @@ class Maneuver(ABC):
   def flatten(self):
     return asdict(self)
 
+  def identity(self):
+    # base identity (subclasses can extend if needed)
+    return self.ego_id, self.t_start, self.t_end
 
-@dataclass
+  def __eq__(self, other):
+    if not isinstance(other, Maneuver):
+      return NotImplemented
+    return self.identity() == other.identity()
+
+  def __hash__(self):
+    return hash(self.identity())
+
+
+@dataclass(eq=False)
 class Interaction(Maneuver):
   other_id: int
 
@@ -34,8 +46,11 @@ class Interaction(Maneuver):
   def maneuver_type(self) -> Literal["interaction"]:
     return "interaction"
 
+  def identity(self):
+    return self.ego_id, self.other_id, self.t_start, self.t_end
 
-@dataclass
+
+@dataclass(eq=False)
 class FollowingManeuver(Interaction):
   long_distance_min: float
   long_distance_mean: float
@@ -52,7 +67,7 @@ class FollowingManeuver(Interaction):
     return "following"
 
 
-@dataclass
+@dataclass(eq=False)
 class OvertakingManeuver(Interaction):
   t_cross: float
 
