@@ -1,10 +1,11 @@
 import numpy as np
 import pandas as pd
-from typing import List, Dict
+from typing import List, Dict, Any, Type
 from data.utils import clean_heading
-from dataclasses import asdict
+from dataclasses import asdict, fields
+from typing import List
 
-from maneuvers.base import Maneuver
+
 
 
 def save_maneuvers_to_csv(maneuvers, filepath):
@@ -14,12 +15,20 @@ def save_maneuvers_to_csv(maneuvers, filepath):
   df = df.drop_duplicates()
   df.to_csv(filepath, index=False)
 
+
 def flatten_optional(obj, prefix: str, cls=None) -> dict:
   if obj is not None:
     return {f"{prefix}_{k}": v for k, v in asdict(obj).items()}
   if cls is None:
     return {}
   return {f"{prefix}_{k}": None for k in cls.__dataclass_fields__}
+
+
+def unflatten_optional(row: Dict[str, Any], prefix: str, cls: Type):
+    data = {f.name: row.get(f"{prefix}_{f.name}") for f in fields(cls)}
+    if all(v is None for v in data.values()):
+        return None
+    return cls(**data)
 
 
 def get_lateral_longitudinal(a, b):

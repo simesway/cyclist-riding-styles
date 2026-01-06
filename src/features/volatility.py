@@ -22,8 +22,10 @@ def cv(x: np.ndarray) -> float:
 
 def qcv(x: np.ndarray) -> float:
   q1, q3 = np.percentile(x, [25, 75])
-  denom = q1 + q3
-  return float((q3 - q1) / denom) if denom != 0 else np.nan
+  denom = abs(q3) + abs(q1)
+  if np.isclose(denom, 0.0):
+    return np.nan
+  return float((q3 - q1) / denom)
 
 
 def p90(x: np.ndarray) -> float:

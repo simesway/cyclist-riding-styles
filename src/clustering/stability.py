@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 from dataclasses import dataclass
-from typing import Dict
+from tqdm import tqdm
 
 from sklearn.metrics import adjusted_rand_score
 
@@ -64,7 +64,7 @@ class RegimeStabilityTester:
   def run_repeated(self, X, n_runs=30):
     sub, seed, noise = [], [], []
 
-    for _ in range(n_runs):
+    for _ in tqdm(range(n_runs)):
       r = self.run(X)
       sub.append(r.ari_subsample)
       seed.append(r.ari_seed)
