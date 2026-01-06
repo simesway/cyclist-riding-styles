@@ -4,7 +4,7 @@ from typing import List
 from sklearn.preprocessing import StandardScaler
 
 from clustering.clusterer import Clusterer
-from clustering.pca import PCAReducer
+from clustering.pca import PCAReducer, SplitPCAReducer
 from clustering.utils import build_feature_matrix
 from features.adapters import FeatureAdapter
 from maneuvers.base import WindowRecord
@@ -15,7 +15,7 @@ class RidingRegimePipeline:
     self,
     feature_adapter: FeatureAdapter,
     clusterer: Clusterer,
-    pca: PCAReducer,
+    pca: PCAReducer | SplitPCAReducer,
   ):
     self.feature_adapter = feature_adapter
     self.clusterer = clusterer
@@ -48,7 +48,7 @@ class RidingRegimePipeline:
   def get_cluster_centers(self, in_original_units=True) -> pd.DataFrame:
     centers_pc = self.clusterer.model_.cluster_centers_
 
-    centers = self.pca.pca.inverse_transform(centers_pc)
+    centers = self.pca.inverse_transform(centers_pc)
     if in_original_units:
       centers = self.scaler.inverse_transform(centers)
 
