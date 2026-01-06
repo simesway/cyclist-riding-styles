@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
+from collections import defaultdict
 from dataclasses import dataclass, asdict
-from typing import Optional, Literal
+from typing import Optional, Literal, List
 
 from data.utils import apply_time_window
 from features.base import RidingFeatures, TrafficFeatures, InfrastructureFeatures
@@ -114,6 +115,17 @@ class WindowRecord:
       **flatten_optional(self.traffic, "env", TrafficFeatures),
       **flatten_optional(self.infrastructure, "infra", InfrastructureFeatures),
     }
+
+
+def group_windows_by_maneuver(
+    windows: List[WindowRecord]
+) -> dict[int, List[WindowRecord]]:
+    """Groups windows by their maneuver ID."""
+    grouped = defaultdict(list)
+    for w in windows:
+        mid = w.meta.maneuver_id
+        grouped[mid].append(w)
+    return dict(grouped)
 
 
 class ManeuverSlicer:
