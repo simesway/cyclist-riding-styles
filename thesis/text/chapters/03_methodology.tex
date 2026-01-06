@@ -75,15 +75,17 @@ For validated candidates, the module extracts descriptive statistics \cite{khan_
 
 volatility as a measure of unsafe driving \cite{arvin_how_2019, mohammadnazar_classifying_2021}
 
-Local riding behaviour is captured using fixed-length sliding windows of 1 s with overlap \cite{mohammadnazar_classifying_2021}, a common approach for modeling short-term driving and riding dynamics while preserving temporal continuity. Within each window, magnitude- \cite{enev_automobile_2016} and volatility-based features are extracted from kinematic signals.
+Local riding behaviour is captured using fixed-length sliding windows of 1 s with overlap \cite{li_volatility-based_2025, mohammadnazar_classifying_2021}, a common approach for modeling short-term driving and riding dynamics while preserving temporal continuity. Within each window, magnitude- \cite{enev_automobile_2016} and volatility-based features are extracted from kinematic signals.
 
 Magnitude features describe the intensity of motion and include speed, longitudinal acceleration, and yaw rate. For each of these signals, minimum and maximum values within the window are computed.
 
 Volatility features capture short-term variability and dynamic fluctuations. They are derived from speed, longitudinal and lateral acceleration, and rotational fluctuations. For each signal, the mean, mean absolute deviation, coefficient of variation, and quartile coefficient of variation are calculated.
 
-All features are normalized, and magnitude and volatility features are weighted equally. Feature relevance is assessed using feature selection techniques and principal component analysis. The resulting window-level feature vectors are clustered jointly across all maneuvers and infrastructure types. 
+All features are standardized, and magnitude and volatility features are weighted equally. Feature relevance is assessed using feature selection techniques and principal component analysis. The resulting window-level feature vectors are clustered jointly across all maneuvers and infrastructure types. 
 
 Yarlagadda and Pawar \cite{yarlagadda_exploring_2022} performed a two level clustering analysis seperating magnitude and volatility features.  In this paper magnitude and volatility features are clustered together, which allows the model to learn characteristic couplings between riding intensity and variability, yielding a set of local riding regimes that are globally consistent.
+
+The extracted feature vectors are standardized and optionally reduced in dimensionality using principal component analysis (PCA). Two strategies are supported: (i) joint PCA across all features or (ii) separate PCAs for magnitude and volatility features, allowing variance to be captured individually per feature type. Cluster assignments are computed using K-means, with the optimal number of clusters determined automatically via a combination of the elbow method and silhouette scores. Each sliding window is then assigned a local riding regime corresponding to its cluster, producing a globally consistent segmentation of riding behavior. Cluster centers can be interpreted in the original feature units, facilitating analysis of characteristic riding patterns. Feature indices for magnitude and volatility are automatically managed to support both split and joint analyses.
 
 \subsection*{Level 2: Maneuver-Level Representation}
 
