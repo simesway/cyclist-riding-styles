@@ -25,68 +25,58 @@ class RegimeStabilityTester:
     self.noise_scale = noise_scale
     self.subsample_frac = subsample_frac
     self.random_state = random_state
+    self.results = None
 
-  def run(self, X: np.ndarray) -> StabilityResult:
-    rng = np.random.RandomState(self.random_state)
+  def _rng(self, seed_offset: int = 0):
+    base = self.random_state or 0
+    return np.random.RandomState(base + seed_offset)
+
+  def run(self, X: np.ndarray, run_id: int = 0) -> StabilityResult:
+    rng = self._rng(run_id)
 
     # reference
-    full = self.clusterer_factory()
-    labels_full = full.fit_predict(X)
+    ref = self.clusterer_factory(random_state=0)
+    labels_ref = ref.fit_predict(X)
 
-    # subsample
+    # subsample stability
     idx = rng.choice(len(X), int(self.subsample_frac * len(X)), replace=False)
-    sub = self.clusterer_factory()
+    sub = self.clusterer_factory(random_state=rng.randint(1e9))
     sub.fit_predict(X[idx])
     labels_sub = sub.predict(X)
-    ari_sub = adjusted_rand_score(labels_full, labels_sub)
+    ari_sub = adjusted_rand_score(labels_ref, labels_sub)
 
-    # rerun
-    c1 = self.clusterer_factory()
-    c2 = self.clusterer_factory()
+    # seed stability
+    c1 = self.clusterer_factory(random_state=rng.randint(1e9))
+    c2 = self.clusterer_factory(random_state=rng.randint(1e9))
     ari_seed = adjusted_rand_score(
       c1.fit_predict(X),
-      c2.fit_predict(X)
+      c2.fit_predict(X),
     )
 
-    # noise
+    # noise stability (fit + predict on noisy data)
     noise = rng.normal(0, self.noise_scale * X.std(axis=0), X.shape)
-    noisy = self.clusterer_factory()
-    noisy.fit_predict(X + noise)
-    labels_noisy = noisy.predict(X)
-    ari_noise = adjusted_rand_score(labels_full, labels_noisy)
+    noisy = self.clusterer_factory(random_state=rng.randint(1e9))
+    labels_noisy = noisy.fit_predict(X + noise)
+    ari_noise = adjusted_rand_score(labels_ref, labels_noisy)
 
-    return StabilityResult(
-      ari_subsample=ari_sub,
-      ari_seed=ari_seed,
-      ari_noise=ari_noise
-    )
+    return StabilityResult(ari_sub, ari_seed, ari_noise)
 
-  def run_repeated(self, X, n_runs=30):
-    sub, seed, noise = [], [], []
+  def run_repeated(self, X: np.ndarray, n_runs: int = 30) -> pd.DataFrame:
+    records = []
 
-    for _ in tqdm(range(n_runs)):
-      r = self.run(X)
-      sub.append(r.ari_subsample)
-      seed.append(r.ari_seed)
-      noise.append(r.ari_noise)
+    for i in tqdm(range(n_runs)):
+      r = self.run(X, run_id=i)
+      records.append(r)
 
-    metrics = {
-      "ari_subsample": sub,
-      "ari_seed": seed,
-      "ari_noise": noise
-    }
+    df = pd.DataFrame([r.__dict__ for r in records])
 
-    rows = []
-    for name, values in metrics.items():
-      perc = np.percentile(values, [50, 10, 90])
-      rows.append({
-        "metric": name,
-        "median": perc[0],
-        "p10": perc[1],
-        "p90": perc[2]
-      })
+    self.results = df
 
-    df = pd.DataFrame(rows)
-    return df
+    return pd.DataFrame({
+      "metric": df.columns,
+      "median": df.median().values,
+      "p10": df.quantile(0.10).values,
+      "p90": df.quantile(0.90).values,
+    })
 
 
