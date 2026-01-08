@@ -3,6 +3,8 @@ from sklearn.cluster import KMeans
 from sklearn.metrics import silhouette_score
 
 
+N_INIT = 20
+
 class Clusterer:
   def fit_predict(self, X: np.ndarray) -> np.ndarray:
     raise NotImplementedError
@@ -12,6 +14,29 @@ class Clusterer:
 
 
 class KMeansClusterer(Clusterer):
+  def __init__(
+      self,
+      k: int,
+      random_state: int | None = None,
+  ):
+    self.k_ = k
+    self.random_state = random_state
+    self.model_ = None
+
+  def fit_predict(self, X: np.ndarray) -> np.ndarray:
+    self.model_ = KMeans(
+      n_clusters=self.k_,
+      random_state=self.random_state,
+      n_init=N_INIT
+    )
+    return self.model_.fit_predict(X)
+
+  def predict(self, X: np.ndarray) -> np.ndarray:
+    return self.model_.predict(X)
+
+
+
+class AutoKMeansClusterer(Clusterer):
   def __init__(
       self,
       k_range: range,
@@ -27,7 +52,7 @@ class KMeansClusterer(Clusterer):
     silhouettes = []
 
     for k in self.k_range:
-      model = KMeans(n_clusters=k, random_state=self.random_state)
+      model = KMeans(n_clusters=k, random_state=self.random_state, n_init=N_INIT)
       labels = model.fit_predict(X)
 
       inertias.append(model.inertia_)
