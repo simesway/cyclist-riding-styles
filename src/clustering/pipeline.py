@@ -27,7 +27,7 @@ class RidingRegimePipeline:
     Modifies WindowRecords in-place by assigning
     w.meta.local_regime
     """
-    X, ws = build_feature_matrix(windows)
+    X, ws = build_feature_matrix(windows, self.feature_adapter)
 
     if len(ws) == 0:
       raise ValueError("No windows with riding features")

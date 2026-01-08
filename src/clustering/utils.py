@@ -5,9 +5,7 @@ from maneuvers.base import WindowRecord
 from features.adapters import FeatureAdapter
 
 
-def build_feature_matrix(windows: list[WindowRecord]):
-
-  adapter = FeatureAdapter(RidingFeatures)
+def build_feature_matrix(windows: list[WindowRecord], adapter: FeatureAdapter):
   X = []
   valid_windows = []
 
