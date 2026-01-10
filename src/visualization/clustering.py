@@ -2,7 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 
-def plot_cluster_radar(df_centers, ax=None):
+def plot_cluster_radar(df_centers, cluster_map=None, ax=None):
   """
   df_centers: DataFrame, rows = clusters, columns = features
   ax: optional matplotlib polar axis
@@ -25,7 +25,10 @@ def plot_cluster_radar(df_centers, ax=None):
   for cluster_id in clusters:
     values = df_centers.loc[cluster_id].tolist()
     values += values[:1]
-    ax.plot(angles, values, linewidth=2, label=f"Cluster {cluster_id}")
+    if cluster_map is None:
+      ax.plot(angles, values, linewidth=2, label=f"Cluster {cluster_id}")
+    else:
+      ax.plot(angles, values, linewidth=2, label=cluster_map[cluster_id])
     ax.fill(angles, values, alpha=0.25)
 
   ax.set_xticks(angles[:-1])
