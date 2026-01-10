@@ -10,6 +10,9 @@ class PCAReducer:
   def fit_transform(self, X):
     return self.pca.fit_transform(X)
 
+  def transform(self, X):
+    return self.pca.transform(X)
+
   def components(self, feature_names, relative=True):
     df_pca_weights = pd.DataFrame(
       data=self.pca.components_,
