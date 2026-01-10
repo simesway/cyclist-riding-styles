@@ -29,33 +29,34 @@ class RegimeStabilityTester:
 
   def _rng(self, seed_offset: int = 0):
     base = self.random_state or 0
-    return np.random.RandomState(base + seed_offset)
+    return np.random.default_rng(base + seed_offset)
 
   def run(self, X: np.ndarray, run_id: int = 0) -> StabilityResult:
     rng = self._rng(run_id)
 
     # reference
-    ref = self.clusterer_factory(random_state=0)
+    ref = self.clusterer_factory(random_state=self.random_state)
     labels_ref = ref.fit_predict(X)
 
     # subsample stability
     idx = rng.choice(len(X), int(self.subsample_frac * len(X)), replace=False)
-    sub = self.clusterer_factory(random_state=rng.randint(1e9))
+    sub = self.clusterer_factory(random_state=rng.integers(1e9))
     sub.fit_predict(X[idx])
     labels_sub = sub.predict(X)
-    ari_sub = adjusted_rand_score(labels_ref, labels_sub)
+    ari_sub = adjusted_rand_score(labels_ref[idx], labels_sub[idx])
 
     # seed stability
-    c1 = self.clusterer_factory(random_state=rng.randint(1e9))
-    c2 = self.clusterer_factory(random_state=rng.randint(1e9))
+    c1 = self.clusterer_factory(random_state=rng.integers(1e9))
+    c2 = self.clusterer_factory(random_state=rng.integers(1e9))
     ari_seed = adjusted_rand_score(
       c1.fit_predict(X),
       c2.fit_predict(X),
     )
 
     # noise stability (fit + predict on noisy data)
-    noise = rng.normal(0, self.noise_scale * X.std(axis=0), X.shape)
-    noisy = self.clusterer_factory(random_state=rng.randint(1e9))
+    scale = np.maximum(X.std(axis=0), 1e-8)
+    noise = rng.normal(0, self.noise_scale * scale, X.shape)
+    noisy = self.clusterer_factory(random_state=rng.integers(1e9))
     labels_noisy = noisy.fit_predict(X + noise)
     ari_noise = adjusted_rand_score(labels_ref, labels_noisy)
 
