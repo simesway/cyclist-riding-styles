@@ -6,6 +6,9 @@ from sklearn.metrics import silhouette_score
 N_INIT = 20
 
 class Clusterer:
+  def get_params(self) -> dict:
+    raise NotImplementedError
+
   def fit_predict(self, X: np.ndarray) -> np.ndarray:
     raise NotImplementedError
 
@@ -22,6 +25,9 @@ class KMeansClusterer(Clusterer):
     self.k_ = k
     self.random_state = random_state
     self.model_ = None
+
+  def get_params(self):
+    return {"k": self.k_, "random_state": self.random_state}
 
   def fit_predict(self, X: np.ndarray) -> np.ndarray:
     self.model_ = KMeans(
@@ -46,6 +52,9 @@ class AutoKMeansClusterer(Clusterer):
     self.random_state = random_state
     self.k_ = None
     self.model_ = None
+
+  def get_params(self):
+    return {"k_range": self.k_range, "random_state": self.random_state}
 
   def _select_k(self, X: np.ndarray) -> int:
     inertias = []
