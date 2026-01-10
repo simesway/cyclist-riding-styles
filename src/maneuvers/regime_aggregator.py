@@ -1,9 +1,9 @@
 import numpy as np
 
 from typing import List
-from collections import Counter
 from dataclasses import dataclass
 
+from clustering.semantics import RegimeClusterMapper
 from maneuvers.base import WindowRecord
 
 
@@ -11,28 +11,74 @@ from maneuvers.base import WindowRecord
 class RegimeAggregation:
   maneuver_id: int
   n_windows: int
-  regime_proportions: np.ndarray
+  has_volatile: bool
+  p_volatile: float
   transition_rate: float
+  mean_run_volatile: float
+  std_run_volatile: float
+  mean_volatile_gap: float
 
 
 class LocalRegimeAggregator:
   def __init__(self, n_regimes: int):
     self.n_regimes = n_regimes
 
-  def aggregate(self, maneuver_id: int, windows: List[WindowRecord]) -> RegimeAggregation:
-    regimes = np.array(
-      [w.local_regime for w in windows if w.local_regime is not None]
-    )
+  def aggregate(
+      self,
+      maneuver_id: int,
+      windows: List[WindowRecord],
+      regime_mapper: RegimeClusterMapper
+  ) -> RegimeAggregation:
+    windows = [w for w in windows if w.meta.maneuver_id == maneuver_id]
+    w_sorted = sorted(windows, key=lambda w: w.t_start)
+    regimes = [w.local_regime for w in w_sorted if w.local_regime is not None]
 
-    if len(regimes) == 0:
+    is_stable = regime_mapper.is_stable(regimes, as_numpy=True)
+
+    N = len(regimes)
+    if N == 0:
       raise ValueError("No regimes assigned to maneuver windows")
 
-    counts = Counter(regimes)
-    proportions = np.zeros(self.n_regimes)
-    for k,v in counts.items():
-      proportions[k] = v / len(regimes)
+    volatile = ~is_stable # e.g. volatile = 0 1 1 0 1
 
-    transitions = np.sum(regimes[1:] != regimes[:-1])
-    transition_rate = transitions / max(len(regimes) - 1, 1)
+    p_volatile = volatile.mean()
 
-    return RegimeAggregation(maneuver_id, len(windows), proportions, transition_rate)
+    # general transition rate (stable -> volatile & volatile -> stable)
+    #transitions = is_stable[:-1] != is_stable[1:]
+    #transition_rate = transitions.sum() / max(N-1, 1)
+
+    # volatile-based transition rate (stable -> volatile)
+    volatile_onsets = (is_stable[:-1] == True) & (is_stable[1:] == False)
+    transition_rate = volatile_onsets.sum() / max(N - 1, 1)
+
+    padded = np.concatenate(([0], volatile.view(np.int8), [0])) # padded = 0 0 1 1 0 1 0
+    diff = np.diff(padded) # diff:   0 1 0 -1 1 -1
+    starts = np.where(diff == 1)[0]
+    ends = np.where(diff == -1)[0]
+    run_lengths = ends - starts
+
+    if len(run_lengths) == 0:
+      mean_run_volatile = 0.0
+      std_run_volatile = 0.0
+      mean_distance_between_volatile = N
+    else:
+      mean_run_volatile = run_lengths.mean()
+      std_run_volatile = run_lengths.std()
+
+      if len(starts) < 2:
+        mean_distance_between_volatile = N
+      else:
+        distances = starts[1:] - ends[:-1]
+        mean_distance_between_volatile = distances.mean()
+
+    return RegimeAggregation(
+      maneuver_id=maneuver_id,
+      n_windows=N,
+      has_volatile=p_volatile > 0.0,
+      p_volatile=p_volatile,
+      transition_rate=transition_rate,
+      mean_run_volatile=mean_run_volatile,
+      std_run_volatile=std_run_volatile,
+      mean_volatile_gap=mean_distance_between_volatile/N
+    )
+
