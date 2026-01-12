@@ -33,12 +33,12 @@ class LocalRegimeAggregator:
     p_volatile = volatile.mean()
 
     # general transition rate (stable -> volatile & volatile -> stable)
-    #transitions = is_stable[:-1] != is_stable[1:]
-    #transition_rate = transitions.sum() / max(N-1, 1)
+    transitions = is_stable[:-1] != is_stable[1:]
+    transition_rate = transitions.sum() / max(N-1, 1)
 
     # volatile-based transition rate (stable -> volatile)
-    volatile_onsets = (is_stable[:-1] == True) & (is_stable[1:] == False)
-    transition_rate = volatile_onsets.sum() / max(N - 1, 1)
+    #volatile_onsets = (is_stable[:-1] == True) & (is_stable[1:] == False)
+    #transition_rate = volatile_onsets.sum() / max(N - 1, 1)
 
     padded = np.concatenate(([0], volatile.view(np.int8), [0])) # padded = 0 0 1 1 0 1 0
     diff = np.diff(padded) # diff:   0 1 0 -1 1 -1
@@ -60,11 +60,11 @@ class LocalRegimeAggregator:
         distances = starts[1:] - ends[:-1]
         mean_distance_between_volatile = distances.mean()
 
-      has_volatile=p_volatile > 0.0,
 
     regime_aggregation = RegimeAggregation(
         maneuver_id=maneuver.id,
         n_windows=N,
+        is_active=0.0 < p_volatile < 1.0,
         p_volatile=p_volatile,
         transition_rate=transition_rate,
         mean_run_volatile=mean_run_volatile,
