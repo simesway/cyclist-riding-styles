@@ -5,6 +5,7 @@ from tqdm import tqdm
 
 from data.smoothing import smooth
 from data.utils import clean_heading
+from features.base import FollowingFeatures
 from features.safety_metrics import time_headway
 from features.vehicle_dynamics import longitudinal_velocity, speed
 from maneuvers.base import FollowingManeuver
@@ -129,15 +130,17 @@ def detect_following(
           id = None,
           ego_id=int(f), other_id=int(l),
           t_start=t0, t_end=t1, duration=t1-t0,
-          long_distance_min=float(np.min(local_long)),
-          long_distance_mean=float(np.mean(local_long)),
-          lateral_offset_mean=float(np.mean(np.abs(local_lat))),
-          thw_min=float(np.min(local_thw)),
-          thw_mean=float(np.mean(np.abs(local_thw))),
-          follower_speed_mean=float(np.mean(v_f[start:end])),
-          leader_speed_mean=float(np.mean(v_l[start:end])),
-          speed_diff_mean=float(np.mean(np.abs(v_f[start:end] - v_l[start:end]))),
-          rel_heading_std=float(np.std(rel_heading[s+start:s+end]))
+          features=FollowingFeatures(
+            long_distance_min=float(np.min(local_long)),
+            long_distance_mean=float(np.mean(local_long)),
+            lateral_offset_mean=float(np.mean(np.abs(local_lat))),
+            thw_min=float(np.min(local_thw)),
+            thw_mean=float(np.mean(np.abs(local_thw))),
+            follower_speed_mean=float(np.mean(v_f[start:end])),
+            leader_speed_mean=float(np.mean(v_l[start:end])),
+            speed_diff_mean=float(np.mean(np.abs(v_f[start:end] - v_l[start:end]))),
+            rel_heading_std=float(np.std(rel_heading[s + start:s + end]))
+          )
         )
       )
 

@@ -4,7 +4,8 @@ from dataclasses import dataclass, asdict, field
 from typing import Optional, Literal, List
 
 from data.utils import apply_time_window
-from features.base import RidingFeatures, TrafficFeatures, InfrastructureFeatures, RegimeAggregation
+from features.base import RidingFeatures, TrafficFeatures, InfrastructureFeatures, RegimeAggregation, FollowingFeatures, \
+  OvertakingFeatures
 from maneuvers.utils import flatten_optional
 
 
@@ -55,15 +56,7 @@ class Interaction(Maneuver):
 
 @dataclass(eq=False)
 class FollowingManeuver(Interaction):
-  long_distance_min: float
-  long_distance_mean: float
-  lateral_offset_mean: float
-  thw_mean: float
-  thw_min: float
-  follower_speed_mean: float
-  leader_speed_mean: float
-  speed_diff_mean: float
-  rel_heading_std: float
+  features: FollowingFeatures
 
   @property
   def maneuver_type(self) -> Literal["following"]:
@@ -73,18 +66,7 @@ class FollowingManeuver(Interaction):
 @dataclass(eq=False)
 class OvertakingManeuver(Interaction):
   t_cross: float
-
-  left_side: bool
-  long_distance_min: float
-  long_distance_max: float
-  lateral_offset_start: float
-  lateral_offset_end: float
-  lateral_offset_max: float
-  lateral_offset_cross: float
-  follower_speed_mean: float
-  leader_speed_mean: float
-  speed_diff_mean: float
-  follower_acc_max: float
+  features: OvertakingFeatures
 
   @property
   def maneuver_type(self) -> Literal["overtaking"]:

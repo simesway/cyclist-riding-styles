@@ -177,17 +177,19 @@ def detect_overtaking(
         t_cross=t_z,
         t_end=t_end,
         duration=duration,
-        left_side=lat[z] > 0,
-        long_distance_min=float(np.min(long[f_min:f_max+1])),
-        long_distance_max=float(np.max(long[f_min:f_max+1])),
-        lateral_offset_start=float(lat[f_min]),
-        lateral_offset_end=float(lat[f_max]),
-        lateral_offset_max=float(np.max(np.abs(lat[f_min:f_max+1]))),
-        lateral_offset_cross=float(lat[z]),
-        follower_speed_mean=float(np.mean(v_f[f_min:f_max+1])),
-        leader_speed_mean=float(np.mean(v_l[f_min:f_max+1])),
-        speed_diff_mean=float(np.mean(np.abs(v_f[f_min:f_max+1] - v_l[f_min:f_max+1]))),
-        follower_acc_max=float(np.max(acc[f_min:f_max+1]))
+        features=OvertakingFeatures(
+          left_side=lat[z] > 0,
+          long_distance_min=float(np.min(long[f_min:f_max+1])),
+          long_distance_max=float(np.max(long[f_min:f_max+1])),
+          lateral_offset_start=float(lat[f_min]),
+          lateral_offset_end=float(lat[f_max]),
+          lateral_offset_max=float(np.max(np.abs(lat[f_min:f_max+1]))),
+          lateral_offset_cross=float(lat[z]),
+          follower_speed_mean=float(np.mean(v_f[f_min:f_max+1])),
+          leader_speed_mean=float(np.mean(v_l[f_min:f_max+1])),
+          speed_diff_mean=float(np.mean(np.abs(v_f[f_min:f_max+1] - v_l[f_min:f_max+1]))),
+          follower_acc_max=float(np.max(acc[f_min:f_max+1]))
+        )
       )
     )
 

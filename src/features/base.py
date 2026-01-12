@@ -29,6 +29,34 @@ class InfrastructureFeatures:
 
 
 @dataclass
+class OvertakingFeatures:
+  left_side: bool
+  long_distance_min: float
+  long_distance_max: float
+  lateral_offset_start: float
+  lateral_offset_end: float
+  lateral_offset_max: float
+  lateral_offset_cross: float
+  follower_speed_mean: float
+  leader_speed_mean: float
+  speed_diff_mean: float
+  follower_acc_max: float
+
+
+@dataclass
+class FollowingFeatures:
+  long_distance_min: float
+  long_distance_mean: float
+  lateral_offset_mean: float
+  thw_mean: float
+  thw_min: float
+  follower_speed_mean: float
+  leader_speed_mean: float
+  speed_diff_mean: float
+  rel_heading_std: float
+
+
+@dataclass
 class RegimeAggregation:
   maneuver_id: int
   n_windows: int
