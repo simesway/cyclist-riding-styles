@@ -1,6 +1,6 @@
 import numpy as np
 import pandas as pd
-from typing import List
+from typing import List, Callable
 
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import silhouette_score, calinski_harabasz_score, davies_bouldin_score
@@ -8,19 +8,20 @@ from sklearn.metrics import silhouette_score, calinski_harabasz_score, davies_bo
 from clustering.clusterer import Clusterer
 from clustering.pca import PCAReducer, SplitPCAReducer
 from clustering.stability import RegimeStabilityTester
-from clustering.utils import build_feature_matrix
-from features.adapters import FeatureAdapter
+from features.adapters import FeatureAdapter, FeatureMatrixBuilder, ManeuverAdapter
 from maneuvers.base import WindowRecord
 
 
 class RidingRegimePipeline:
   def __init__(
     self,
-    feature_adapter: FeatureAdapter,
+    adapter: FeatureAdapter | ManeuverAdapter,
+    getter: Callable,
     clusterer: Clusterer,
     pca: PCAReducer | SplitPCAReducer,
   ):
-    self.feature_adapter = feature_adapter
+    self.adapter = adapter
+    self.builder = FeatureMatrixBuilder(adapter, getter, drop_none=False)
     self.clusterer = clusterer
     self.pca = pca
     self.scaler = StandardScaler()
@@ -33,7 +34,7 @@ class RidingRegimePipeline:
     Modifies WindowRecords in-place by assigning
     w.meta.local_regime
     """
-    X, ws = build_feature_matrix(windows, self.feature_adapter)
+    X, ws = self.builder.to_numpy(windows)
 
     if len(ws) == 0:
       raise ValueError("No windows with riding features")
@@ -61,7 +62,7 @@ class RidingRegimePipeline:
     if in_original_units:
       centers = self.scaler.inverse_transform(centers)
 
-    df = pd.DataFrame(centers, columns=self.feature_adapter.feature_names)
+    df = pd.DataFrame(centers, columns=self.adapter.feature_names)
     df.index.name = "cluster_id"
     return df
 
@@ -72,7 +73,7 @@ class RidingRegimePipeline:
       noise_scale: float=0.1,
       n_runs: int=30
   ) -> pd.DataFrame:
-    X, ws = build_feature_matrix(windows, self.feature_adapter)
+    X, ws = self.builder.to_numpy(windows)
 
     if len(ws) == 0:
       raise ValueError("No windows with riding features")
