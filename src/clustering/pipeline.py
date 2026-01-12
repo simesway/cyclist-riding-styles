@@ -1,6 +1,6 @@
 import numpy as np
 import pandas as pd
-from typing import List, Callable
+from typing import List, Callable, Iterable, Tuple
 
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import silhouette_score, calinski_harabasz_score, davies_bouldin_score
@@ -9,10 +9,9 @@ from clustering.clusterer import Clusterer
 from clustering.pca import PCAReducer, SplitPCAReducer
 from clustering.stability import RegimeStabilityTester
 from features.adapters import FeatureAdapter, FeatureMatrixBuilder, ManeuverAdapter
-from maneuvers.base import WindowRecord
 
 
-class RidingRegimePipeline:
+class ClusteringPipeline:
   def __init__(
     self,
     adapter: FeatureAdapter | ManeuverAdapter,
@@ -29,14 +28,14 @@ class RidingRegimePipeline:
     self._X_scaled = None
     self._labels = None
 
-  def run(self, windows: List[WindowRecord]) -> None:
+  def run(self, items: Iterable) -> Tuple[np.ndarray, np.ndarray, List]:
     """
     Modifies WindowRecords in-place by assigning
     w.meta.local_regime
     """
-    X, ws = self.builder.to_numpy(windows)
+    X, valid_items = self.builder.to_numpy(items)
 
-    if len(ws) == 0:
+    if len(valid_items) == 0:
       raise ValueError("No windows with riding features")
 
     X = self.scaler.fit_transform(X)
@@ -46,14 +45,13 @@ class RidingRegimePipeline:
 
     labels = self.clusterer.fit_predict(X)
 
-    if len(labels) != len(ws):
-      raise RuntimeError("Label/window mismatch")
+    if len(labels) != len(valid_items):
+      raise RuntimeError("Label/valid_items mismatch")
 
     self._X_scaled = X
     self._labels = labels
 
-    for w, label in zip(ws, labels):
-      w.local_regime = int(label)
+    return X, labels, valid_items
 
   def get_cluster_centers(self, in_original_units=True) -> pd.DataFrame:
     centers_pc = self.clusterer.model_.cluster_centers_
@@ -68,12 +66,12 @@ class RidingRegimePipeline:
 
   def stability_test(
       self,
-      windows: List[WindowRecord],
+      items: Iterable,
       subsample_frac: float=0.8,
       noise_scale: float=0.1,
       n_runs: int=30
   ) -> pd.DataFrame:
-    X, ws = self.builder.to_numpy(windows)
+    X, ws = self.builder.to_numpy(items)
 
     if len(ws) == 0:
       raise ValueError("No windows with riding features")
