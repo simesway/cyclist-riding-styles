@@ -4,6 +4,7 @@ from tqdm import tqdm
 from typing import List, Tuple, Optional
 
 from data.smoothing import smooth
+from features.base import OvertakingFeatures
 from features.vehicle_dynamics import speed, acceleration
 from maneuvers.base import OvertakingManeuver
 from maneuvers.utils import get_lateral_longitudinal, extract_overtake_windows
