@@ -26,3 +26,15 @@ class TrafficFeatures:
 @dataclass
 class InfrastructureFeatures:
   lane_width: float
+
+
+@dataclass
+class RegimeAggregation:
+  maneuver_id: int
+  n_windows: int
+  is_active: bool
+  p_volatile: float
+  transition_rate: float
+  mean_run_volatile: float
+  std_run_volatile: float
+  mean_volatile_gap: float

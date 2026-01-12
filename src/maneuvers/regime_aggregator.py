@@ -1,22 +1,10 @@
 import numpy as np
 
 from typing import List
-from dataclasses import dataclass
 
 from clustering.semantics import RegimeClusterMapper
-from maneuvers.base import WindowRecord
-
-
-@dataclass
-class RegimeAggregation:
-  maneuver_id: int
-  n_windows: int
-  has_volatile: bool
-  p_volatile: float
-  transition_rate: float
-  mean_run_volatile: float
-  std_run_volatile: float
-  mean_volatile_gap: float
+from features.base import RegimeAggregation
+from maneuvers.base import WindowRecord, Maneuver
 
 
 class LocalRegimeAggregator:
@@ -25,11 +13,12 @@ class LocalRegimeAggregator:
 
   def aggregate(
       self,
-      maneuver_id: int,
+      maneuver: Maneuver,
       windows: List[WindowRecord],
-      regime_mapper: RegimeClusterMapper
+      regime_mapper: RegimeClusterMapper,
+      attach=True
   ) -> RegimeAggregation:
-    windows = [w for w in windows if w.meta.maneuver_id == maneuver_id]
+    windows = [w for w in windows if w.meta.maneuver_id == maneuver.id]
     w_sorted = sorted(windows, key=lambda w: w.t_start)
     regimes = [w.local_regime for w in w_sorted if w.local_regime is not None]
 
@@ -71,14 +60,20 @@ class LocalRegimeAggregator:
         distances = starts[1:] - ends[:-1]
         mean_distance_between_volatile = distances.mean()
 
-    return RegimeAggregation(
-      maneuver_id=maneuver_id,
-      n_windows=N,
       has_volatile=p_volatile > 0.0,
-      p_volatile=p_volatile,
-      transition_rate=transition_rate,
-      mean_run_volatile=mean_run_volatile,
-      std_run_volatile=std_run_volatile,
-      mean_volatile_gap=mean_distance_between_volatile/N
-    )
+
+    regime_aggregation = RegimeAggregation(
+        maneuver_id=maneuver.id,
+        n_windows=N,
+        p_volatile=p_volatile,
+        transition_rate=transition_rate,
+        mean_run_volatile=mean_run_volatile,
+        std_run_volatile=std_run_volatile,
+        mean_volatile_gap=mean_distance_between_volatile/N
+      )
+
+    if attach:
+      maneuver.regime_aggregation = regime_aggregation
+
+    return regime_aggregation
 
