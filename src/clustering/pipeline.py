@@ -25,6 +25,9 @@ class RidingRegimePipeline:
     self.pca = pca
     self.scaler = StandardScaler()
 
+    self._X_scaled = None
+    self._labels = None
+
   def run(self, windows: List[WindowRecord]) -> None:
     """
     Modifies WindowRecords in-place by assigning
@@ -44,6 +47,9 @@ class RidingRegimePipeline:
 
     if len(labels) != len(ws):
       raise RuntimeError("Label/window mismatch")
+
+    self._X_scaled = X
+    self._labels = labels
 
     for w, label in zip(ws, labels):
       w.local_regime = int(label)
@@ -91,36 +97,31 @@ class RidingRegimePipeline:
 
     return tester.run_repeated(X_scaled, n_runs=n_runs)
 
-  def compute_cluster_metrics(self, windows: List[WindowRecord]) -> pd.DataFrame:
-    """
-    Compute overall clustering metrics for the current local_regime labels.
-    """
-    labels = [w.local_regime for w in windows if hasattr(w, "local_regime")]
-    if len(labels) == 0:
-      raise ValueError("No windows have been clustered yet")
-
-    X, ws = build_feature_matrix(windows, self.feature_adapter)
-    if len(ws) == 0:
-      raise ValueError("No windows with features")
-
-    X_scaled = self.scaler.transform(X)
-    if self.pca is not None:
-      X_scaled = self.pca.transform(X_scaled)
-
-    labels = np.array(labels)
-    unique, counts = np.unique(labels, return_counts=True)
-    cluster_sizes = dict(zip(unique, counts))
-
+  @staticmethod
+  def compute_cluster_metrics_from_X(
+      X: np.ndarray,
+      labels: np.ndarray,
+  ) -> pd.DataFrame:
     metrics = {}
-    if len(np.unique(labels)) > 1:
-      metrics['silhouette'] = silhouette_score(X_scaled, labels)
-      metrics['calinski_harabasz'] = calinski_harabasz_score(X_scaled, labels)
-      metrics['davies_bouldin'] = davies_bouldin_score(X_scaled, labels)
-    else:
-      metrics['silhouette'] = np.nan
-      metrics['calinski_harabasz'] = np.nan
-      metrics['davies_bouldin'] = np.nan
 
-    metrics.update({f'cluster_{k}_size': v for k, v in cluster_sizes.items()})
+    unique, counts = np.unique(labels, return_counts=True)
+    metrics.update({f"cluster_{k}_size": v for k, v in zip(unique, counts)})
+
+    if len(unique) > 1:
+      metrics["silhouette"] = silhouette_score(X, labels)
+      metrics["calinski_harabasz"] = calinski_harabasz_score(X, labels)
+      metrics["davies_bouldin"] = davies_bouldin_score(X, labels)
+    else:
+      metrics["silhouette"] = np.nan
+      metrics["calinski_harabasz"] = np.nan
+      metrics["davies_bouldin"] = np.nan
+
     return pd.DataFrame([metrics])
 
+  def compute_cluster_metrics(self) -> pd.DataFrame:
+    if self._labels is None or self._X_scaled is None:
+        raise RuntimeError("Pipeline has not been run")
+    return self.compute_cluster_metrics_from_X(
+      self._X_scaled,
+      self._labels
+    )
