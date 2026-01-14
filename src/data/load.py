@@ -1,6 +1,8 @@
 import json
+import gzip
 import pandas as pd
 from pathlib import Path
+from dataclasses import asdict
 
 def load_metadata(path: str | Path) -> dict:
   """Load metadata JSON file."""
@@ -21,3 +23,14 @@ def load_all_trajectories(path: str | Path) -> pd.DataFrame:
     dfs.append(df)
   df = pd.concat(dfs, ignore_index=True)
   return df.sort_values(by=["timestamp", "track_id"]).reset_index(drop=True)
+
+def save_list(path: str, objs: list):
+  """Save a list of dataclass objects to a gzipped JSON file."""
+  with gzip.open(path, "wt", encoding="utf-8") as f:
+    json.dump([asdict(o) for o in objs], f, separators=(",", ":"))
+
+def load_list(path: str, cls):
+  """Load a list of dataclass objects from a gzipped JSON file."""
+  with gzip.open(path, "rt", encoding="utf-8") as f:
+    data = json.load(f)
+  return [cls(**item) for item in data]

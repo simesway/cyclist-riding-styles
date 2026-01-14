@@ -72,17 +72,17 @@ class WindowBuilder:
     windows = self.window_extractor.extract(maneuver_df)
 
     meta = ManeuverMeta(
-      maneuver_id=maneuver.id,
+      maneuver_id=int(maneuver.id),
       maneuver_type=maneuver.maneuver_type,
-      ego_id=maneuver.ego_id,
+      ego_id=int(maneuver.ego_id),
     )
     records = []
     for t_start, t_end, window_df in windows:
       records.append(
         WindowRecord(
           meta=meta,
-          t_start=t_start,
-          t_end=t_end,
+          t_start=float(t_start),
+          t_end=float(t_end),
           riding=self.riding_extractor.extract(window_df),
           traffic=self.traffic_extractor.extract(window_df, maneuver=maneuver),
           infrastructure=self.infra_extractor.extract(window_df)

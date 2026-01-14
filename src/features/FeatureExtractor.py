@@ -40,6 +40,18 @@ class RidingFeatureExtractor(FeatureExtractor[RidingFeatures]):
       acc_std=acc["std"],
       acc_mad=acc["mad"],
       acc_qcv=acc["qcv"],
+      speed_max=float(speed["max"]),
+      speed_min=float(speed["min"]),
+      speed_mean=float(speed["mean"]),
+      speed_std=float(speed["std"]),
+      speed_mad=float(speed["mad"]),
+      speed_qcv=float(speed["qcv"]),
+      acc_max=float(acc["max"]),
+      acc_min=float(acc["min"]),
+      acc_mean=float(acc["mean"]),
+      acc_std=float(acc["std"]),
+      acc_mad=float(acc["mad"]),
+      acc_qcv=float(acc["qcv"]),
     )
 
 class TrafficFeatureExtractor(FeatureExtractor[TrafficFeatures]):

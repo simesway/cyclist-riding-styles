@@ -127,7 +127,6 @@ def detect_following(
       local_long = long[start:end]
       maneuvers.append(
         FollowingManeuver(
-          id = None,
           ego_id=int(f), other_id=int(l),
           t_start=t0, t_end=t1, duration=t1-t0,
           features=FollowingFeatures(

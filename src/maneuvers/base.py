@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from collections import defaultdict
-from dataclasses import dataclass, asdict, field
+from dataclasses import dataclass, asdict
 from typing import Optional, Literal, List
 
 from data.utils import apply_time_window
@@ -11,15 +11,16 @@ from maneuvers.utils import flatten_optional
 
 ManeuverType = Literal["interaction", "following", "overtaking"]
 
-@dataclass(eq=False)
+@dataclass(eq=False, kw_only=True)
 class Maneuver(ABC):
-  id: int | None
+  id: int = None
   ego_id: int
   t_start: float
   t_end: float
   duration: float
 
-  regime_aggregation: Optional[RegimeAggregation] = field(default=None, init=False)
+  cluster_id: Optional[int] = None
+  regime_aggregation: Optional[RegimeAggregation] = None
 
   @property
   @abstractmethod

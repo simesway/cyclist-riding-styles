@@ -172,14 +172,13 @@ def detect_overtaking(
     f_min, f_max = start_idx or z, end_idx or z
     candidates.append(
       OvertakingManeuver(
-        id = None,
         ego_id=int(f), other_id=int(l),
         t_start=t_start,
         t_cross=t_z,
         t_end=t_end,
         duration=duration,
         features=OvertakingFeatures(
-          left_side=lat[z] > 0,
+          left_side=bool(lat[z] > 0),
           long_distance_min=float(np.min(long[f_min:f_max+1])),
           long_distance_max=float(np.max(long[f_min:f_max+1])),
           lateral_offset_start=float(lat[f_min]),
