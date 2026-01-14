@@ -62,14 +62,14 @@ class LocalRegimeAggregator:
 
 
     regime_aggregation = RegimeAggregation(
-        maneuver_id=maneuver.id,
-        n_windows=N,
-        is_active=0.0 < p_volatile < 1.0,
-        p_volatile=p_volatile,
-        transition_rate=transition_rate,
-        mean_run_volatile=mean_run_volatile,
-        std_run_volatile=std_run_volatile,
-        mean_volatile_gap=mean_distance_between_volatile/N
+        maneuver_id=int(maneuver.id),
+        n_windows=int(N),
+        is_active=bool(0.0 < p_volatile < 1.0),
+        p_volatile=float(p_volatile),
+        transition_rate=float(transition_rate),
+        mean_run_volatile=float(mean_run_volatile),
+        std_run_volatile=float(std_run_volatile),
+        mean_volatile_gap=float(mean_distance_between_volatile/N)
       )
 
     if attach:
