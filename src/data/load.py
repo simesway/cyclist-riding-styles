@@ -4,6 +4,10 @@ import pandas as pd
 from pathlib import Path
 from dataclasses import asdict
 
+from features.base import OvertakingFeatures, FollowingFeatures, RidingFeatures, TrafficFeatures, InfrastructureFeatures
+from maneuvers.base import OvertakingManeuver, FollowingManeuver, ManeuverMeta, WindowRecord
+
+
 def load_metadata(path: str | Path) -> dict:
   """Load metadata JSON file."""
   with open(path, "r") as f:
@@ -34,3 +38,45 @@ def load_list(path: str, cls):
   with gzip.open(path, "rt", encoding="utf-8") as f:
     data = json.load(f)
   return [cls(**item) for item in data]
+
+def load_overtaking(path):
+  """Load a list of OvertakingManeuver objects from gzip JSON with nested features restored."""
+  with gzip.open(path, "rt", encoding="utf-8") as f:
+    data = json.load(f)
+
+  out = []
+  for d in data:
+    # Restore nested OvertakingFeatures
+    d['features'] = OvertakingFeatures(**d['features'])
+    out.append(OvertakingManeuver(**d))
+  return out
+
+def load_following(path):
+  """Load a list of FollowingManeuver objects from gzip JSON with nested features restored."""
+  with gzip.open(path, "rt", encoding="utf-8") as f:
+    data = json.load(f)
+
+  out = []
+  for d in data:
+    # Restore nested FollowingFeatures
+    d['features'] = FollowingFeatures(**d['features'])
+    out.append(FollowingManeuver(**d))
+  return out
+
+def load_windowrecords(path):
+    """Load a list of WindowRecord objects from gzip JSON with nested features restored."""
+    with gzip.open(path, "rt", encoding="utf-8") as f:
+        data = json.load(f)
+
+    out = []
+    for d in data:
+        # Restore nested dataclasses
+        d['meta'] = ManeuverMeta(**d['meta'])
+        if d.get('riding') is not None:
+            d['riding'] = RidingFeatures(**d['riding'])
+        if d.get('traffic') is not None:
+            d['traffic'] = TrafficFeatures(**d['traffic'])
+        if d.get('infrastructure') is not None:
+            d['infrastructure'] = InfrastructureFeatures(**d['infrastructure'])
+        out.append(WindowRecord(**d))
+    return out
