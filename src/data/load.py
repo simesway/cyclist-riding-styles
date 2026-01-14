@@ -3,6 +3,7 @@ import gzip
 import pandas as pd
 from pathlib import Path
 from dataclasses import asdict
+from omegaconf import OmegaConf
 
 from features.base import OvertakingFeatures, FollowingFeatures, RidingFeatures, TrafficFeatures, InfrastructureFeatures
 from maneuvers.base import OvertakingManeuver, FollowingManeuver, ManeuverMeta, WindowRecord
@@ -46,7 +47,6 @@ def load_overtaking(path):
 
   out = []
   for d in data:
-    # Restore nested OvertakingFeatures
     d['features'] = OvertakingFeatures(**d['features'])
     out.append(OvertakingManeuver(**d))
   return out
@@ -58,7 +58,6 @@ def load_following(path):
 
   out = []
   for d in data:
-    # Restore nested FollowingFeatures
     d['features'] = FollowingFeatures(**d['features'])
     out.append(FollowingManeuver(**d))
   return out
@@ -70,7 +69,6 @@ def load_windowrecords(path):
 
     out = []
     for d in data:
-        # Restore nested dataclasses
         d['meta'] = ManeuverMeta(**d['meta'])
         if d.get('riding') is not None:
             d['riding'] = RidingFeatures(**d['riding'])
@@ -80,3 +78,7 @@ def load_windowrecords(path):
             d['infrastructure'] = InfrastructureFeatures(**d['infrastructure'])
         out.append(WindowRecord(**d))
     return out
+
+def load_config(path: str | Path):
+  """Load configuration YAML file."""
+  return OmegaConf.load(path)
