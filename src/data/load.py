@@ -3,7 +3,6 @@ import gzip
 import pandas as pd
 from pathlib import Path
 from dataclasses import asdict
-from omegaconf import OmegaConf
 
 from features.base import OvertakingFeatures, FollowingFeatures, RidingFeatures, TrafficFeatures, InfrastructureFeatures
 from maneuvers.base import OvertakingManeuver, FollowingManeuver, ManeuverMeta, WindowRecord
@@ -27,7 +26,37 @@ def load_all_trajectories(path: str | Path) -> pd.DataFrame:
     df = pd.read_csv(f)
     dfs.append(df)
   df = pd.concat(dfs, ignore_index=True)
-  return df.sort_values(by=["timestamp", "track_id"]).reset_index(drop=True)
+  df.drop(["dimension_z", "interpolated"], axis=1, inplace=True, errors='ignore')
+  df = df.sort_values(by=["timestamp", "track_id"]).reset_index(drop=True)
+
+  return df
+
+
+def load_or_process(save_path, process_fn, load_fn, save_fn, force_process=False):
+  """
+  Load a processed object if it exists; otherwise, process it, save, and return.
+
+  Parameters:
+      save_path (str or Path): Path to the saved object.
+      process_fn (callable): Function that produces the object if it doesn't exist.
+      load_fn (callable): Function to load the object from save_path.
+      save_fn (callable): Function to save the object to save_path.
+      force_process (bool): If True, ignore existing file and re-process.
+
+  Returns:
+      Any: The loaded or newly processed object.
+  """
+  save_path = Path(save_path)
+
+  if save_path.exists() and not force_process:
+    print("Loading file...")
+    return load_fn(save_path)
+
+  print("Processing...")
+  obj = process_fn()
+  save_fn(obj, save_path)
+  return obj
+
 
 def save_list(path: str, objs: list):
   """Save a list of dataclass objects to a gzipped JSON file."""
@@ -78,7 +107,3 @@ def load_windowrecords(path):
             d['infrastructure'] = InfrastructureFeatures(**d['infrastructure'])
         out.append(WindowRecord(**d))
     return out
-
-def load_config(path: str | Path):
-  """Load configuration YAML file."""
-  return OmegaConf.load(path)
