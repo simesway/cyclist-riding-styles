@@ -25,7 +25,20 @@ class TrafficFeatures:
 
 @dataclass
 class InfrastructureFeatures:
+  # Road type features
+  on_motorway: bool
+  on_bikelane: bool
+  on_sidewalk: bool
+  offset_lane_center: float
+  rel_offset_lane_center: float
+  min_lateral_clearance: float
+  max_lateral_clearance: float
   lane_width: float
+
+  # other features
+  distance_traffic_light: float
+  distance_regulatory_sign: float
+  distance_warning_sign: float
 
 
 @dataclass
