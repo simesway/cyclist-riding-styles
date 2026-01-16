@@ -17,6 +17,10 @@ class RidingFeatures:
   acc_mad: float
   acc_qcv: float
 
+  rot_fluc_mad: float
+  rot_fluc_std: float
+  rot_fluc_max_abs: float
+
 
 @dataclass
 class TrafficFeatures:
@@ -29,8 +33,11 @@ class InfrastructureFeatures:
   on_motorway: bool
   on_bikelane: bool
   on_sidewalk: bool
+
   offset_lane_center: float
   rel_offset_lane_center: float
+
+  left_clearance: float
   min_lateral_clearance: float
   max_lateral_clearance: float
   lane_width: float
