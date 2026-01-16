@@ -1,0 +1,3 @@
+paths:
+  raw: ${env.DATA_ROOT}/raw
+  xodr: ${env.DATA_ROOT}/raw/map/2023-03-22_1477_TEMPUS_Rheinstrasse.xodr
