@@ -4,7 +4,6 @@ from tqdm import tqdm
 
 from data.utils import apply_time_window
 from features.FeatureExtractor import TrafficFeatureExtractor, InfrastructureFeatureExtractor, RidingFeatureExtractor, NullExtractor
-from features.vehicle_dynamics import speed, acceleration, longitudinal_acceleration, lateral_acceleration
 from maneuvers.base import WindowRecord, Maneuver, ManeuverSlicer, ManeuverMeta
 
 
@@ -60,10 +59,9 @@ class WindowBuilder:
 
   def infer_features(self, maneuver_df: pd.DataFrame) -> pd.DataFrame:
     df = maneuver_df.copy()
-    df["speed"] = pd.Series(speed(df), index=df.index)
-    df["acceleration"] = pd.Series(acceleration(df), index=df.index)
-    df["long_acc"] = pd.Series(longitudinal_acceleration(df), index=df.index)
-    df["lat_acc"] = pd.Series(lateral_acceleration(df), index=df.index)
+    df = self.riding_extractor.prepare(df)
+    df = self.infra_extractor.prepare(df)
+    df = self.traffic_extractor.prepare(df)
     return df
 
   def build_for_maneuver(self, traj_df: pd.DataFrame, maneuver: Maneuver) -> List[WindowRecord]:
