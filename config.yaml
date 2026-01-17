@@ -1,3 +1,8 @@
 paths:
   raw: ${env.DATA_ROOT}/raw
   xodr: ${env.DATA_ROOT}/raw/map/2023-03-22_1477_TEMPUS_Rheinstrasse.xodr
+
+map:
+  offset_x: 692009.0
+  offset_y: 5338095.0
+  coordinate_system: 'UTM32N'
