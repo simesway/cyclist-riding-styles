@@ -24,7 +24,12 @@ class RidingFeatures:
 
 @dataclass
 class TrafficFeatures:
-  thw_mean: float
+  mean_car_count: float
+  max_car_count: float
+  mean_pedestrian_count: float
+  max_pedestrian_count: float
+  mean_bicycle_count: float
+  max_bicycle_count: float
 
 
 @dataclass

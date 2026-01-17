@@ -57,16 +57,16 @@ class WindowBuilder:
     self.traffic_extractor = traffic_extractor
     self.infra_extractor = infra_extractor
 
-  def infer_features(self, maneuver_df: pd.DataFrame) -> pd.DataFrame:
+  def infer_features(self, maneuver_df: pd.DataFrame, maneuver: Maneuver) -> pd.DataFrame:
     df = maneuver_df.copy()
-    df = self.riding_extractor.prepare(df)
-    df = self.infra_extractor.prepare(df)
-    df = self.traffic_extractor.prepare(df)
+    df = self.riding_extractor.prepare(df, maneuver)
+    df = self.infra_extractor.prepare(df, maneuver)
+    df = self.traffic_extractor.prepare(df, maneuver)
     return df
 
   def build_for_maneuver(self, traj_df: pd.DataFrame, maneuver: Maneuver) -> List[WindowRecord]:
     maneuver_df = ManeuverSlicer.slice(traj_df, maneuver)
-    maneuver_df = self.infer_features(maneuver_df)
+    maneuver_df = self.infer_features(maneuver_df, maneuver)
     windows = self.window_extractor.extract(maneuver_df)
 
     meta = ManeuverMeta(

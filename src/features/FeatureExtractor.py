@@ -8,10 +8,12 @@ import trafficfeatures.opendrive as odr
 
 from features.infrastructure import on_lane, offset_lane_center, rel_offset_norm, min_lateral_clearance, \
   max_lateral_clearance, distance_to_signal
+from features.traffic import merge_column, counts_within_radius
 from features.vehicle_dynamics import longitudinal_acceleration, rotation_fluctuation_signal
 from features.volatility import stats_basic, max_abs
 from maneuvers.base import Maneuver
 from features.base import RidingFeatures, TrafficFeatures, InfrastructureFeatures
+from maneuvers.encounter_extractor import EncounterExtractor
 
 T = TypeVar("T")
 
@@ -20,7 +22,7 @@ class FeatureExtractor(ABC, Generic[T]):
   """Base class for window-level feature extractors"""
 
   @abstractmethod
-  def prepare(self, df) -> pd.DataFrame:
+  def prepare(self, df, maneuver: Maneuver) -> pd.DataFrame:
     """Prepares the Maneuver DataFrame for feature extraction (e.g., computes derived signals)"""
     pass
 
@@ -31,7 +33,7 @@ class FeatureExtractor(ABC, Generic[T]):
 
 
 class NullExtractor(FeatureExtractor[None]):
-  def prepare(self, df) -> pd.DataFrame:
+  def prepare(self, df, maneuver: Maneuver) -> pd.DataFrame:
     return df
 
   def extract(self, *_, **__):
@@ -39,7 +41,7 @@ class NullExtractor(FeatureExtractor[None]):
 
 
 class RidingFeatureExtractor(FeatureExtractor[RidingFeatures]):
-  def prepare(self, df: pd.DataFrame) -> pd.DataFrame:
+  def prepare(self, df, maneuver: Maneuver) -> pd.DataFrame:
     df["velocity"] = inst.magnitude(df, ["velocity_x", "velocity_y"])
     df["acceleration"] = inst.magnitude(df, ["acceleration_x", "acceleration_y"])
     df["long_acc"] = pd.Series(longitudinal_acceleration(df), index=df.index)
@@ -70,15 +72,48 @@ class RidingFeatureExtractor(FeatureExtractor[RidingFeatures]):
 
 class TrafficFeatureExtractor(FeatureExtractor[TrafficFeatures]):
   """Extracts leader-follower interaction and traffic features"""
-  def extract(self, window_df, **kwargs) -> TrafficFeatures:
-    maneuver: Maneuver = kwargs["maneuver"]
-    ...
+  def __init__(self, raw_trajectories: pd.DataFrame):
+    self.extractor = EncounterExtractor(raw_trajectories)
+
+  def prepare(self, df, maneuver: Maneuver) -> pd.DataFrame:
+    sub_df = self.extractor.get_encounters(maneuver.ego_id, 20, maneuver.t_start, maneuver.t_end)
+
+    sub_df = sub_df[sub_df["distance"] <= 20]
+
+    sub_df["velocity"] = inst.magnitude(sub_df, ["velocity_x", "velocity_y"])
+
+    df = merge_column(
+      df, counts_within_radius(sub_df, 1, 20, 5),
+      col_name="count", new_name="car_count", fillna=0
+    )
+
+    df = merge_column(
+      df, counts_within_radius(sub_df, 2, 5, 0.5),
+      col_name="count", new_name="pedestrian_count", fillna=0
+    )
+
+    df = merge_column(
+      df, counts_within_radius(sub_df, 3, 10, 2),
+      col_name="count", new_name="bicycle_count", fillna=0
+    )
+
+    return df
+
+  def extract(self, df, **kwargs) -> TrafficFeatures:
+    return TrafficFeatures(
+      mean_car_count=float(df["car_count"].mean()),
+      mean_pedestrian_count=float(df["pedestrian_count"].mean()),
+      mean_bicycle_count=float(df["bicycle_count"].mean()),
+      max_car_count=float(df["car_count"].max()),
+      max_pedestrian_count=float(df["pedestrian_count"].max()),
+      max_bicycle_count=float(df["bicycle_count"].max()),
+    )
 
 class InfrastructureFeatureExtractor(FeatureExtractor[InfrastructureFeatures]):
   def __init__(self):
     self.signals = odr.get_signals()
 
-  def prepare(self, df) -> pd.DataFrame:
+  def prepare(self, df, maneuver: Maneuver) -> pd.DataFrame:
     df["on_bikelane"] = on_lane(df, ["biking"])
     df["on_sidewalk"] = on_lane(df, ["sidewalk"])
     df["on_motorway"] = on_lane(df, ["driving", "shoulder", "parking", "tram"])
