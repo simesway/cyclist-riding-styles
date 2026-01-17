@@ -9,6 +9,7 @@ def get_time_window(df: pd.DataFrame, traj_ids: List[int]) -> Tuple[int, int]:
 
 
 def apply_time_window(df: pd.DataFrame, t_start: float=None, t_end: float=None, t_col="timestamp") -> pd.DataFrame:
+  """Apply a time window to a dataframe, returns a copy."""
   mask = df[t_col].between(t_start, t_end, inclusive="both")
   return df[mask].copy()
 
