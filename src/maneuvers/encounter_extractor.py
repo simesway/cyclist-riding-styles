@@ -77,11 +77,7 @@ class EncounterExtractor:
     self.df_subset = apply_time_window(self.df, t_start, t_end)
     self.traj_dict = self.traj_list_to_linestrings(self.df_subset)
 
-    tree, segments, segment_lookup = self.build_str_tree(self.traj_dict, [])
-
-    self.tree = tree
-    self.segments = segments
-    self.segment_lookup = segment_lookup
+    self.tree, self.segments, self.segment_lookup = self.build_str_tree(self.traj_dict, [])
 
   def query_candidates(self, target_id: int, distance: float) -> List[int]:
     """Queries the STR-Tree to gain intersecting trajectory segments and candidates for interactions."""
@@ -95,20 +91,26 @@ class EncounterExtractor:
     return [c for c in candidates if c != target_id]
 
   def get_distances(self, target_id: int, candidates: List[int]) -> pd.DataFrame:
-    """Compute distances between target and candidate trajectories."""
+    """
+    Compute distances between target and candidate trajectories.
+    Returns a DataFrame with relative positions, velocities, and distances.
+    """
     target_df = self.df_subset[self.df_subset["track_id"] == target_id]
     cand_df = self.df_subset[self.df_subset["track_id"].isin(candidates)]
 
     merged = cand_df.merge(
-      target_df[["timestamp", self.x_col, self.y_col]],
+      target_df[["timestamp", self.x_col, self.y_col, "velocity_x", "velocity_y"]],
       on="timestamp",
       suffixes=("", "_target")
     )
 
-    merged["distance"] = np.sqrt(
-      (merged[self.x_col] - merged[self.x_col+"_target"]) ** 2 +
-      (merged[self.y_col] - merged[self.y_col+"_target"]) ** 2
-    )
+    merged["dx"] = merged[self.x_col] - merged[self.x_col+"_target"]
+    merged["dy"] = merged[self.y_col] - merged[self.y_col+"_target"]
+
+    merged["vx_rel"] = merged["velocity_x"] - merged["velocity_x_target"]
+    merged["vy_rel"] = merged["velocity_y"] - merged["velocity_y_target"]
+
+    merged["distance"] = np.sqrt(merged["dx"] ** 2 + merged["dy"] ** 2)
 
     merged.drop(columns=[self.x_col+"_target", self.y_col+"_target"], inplace=True)
     
