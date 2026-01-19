@@ -24,12 +24,47 @@ class RidingFeatures:
 
 @dataclass
 class TrafficFeatures:
-  mean_car_count: float
-  max_car_count: float
-  mean_pedestrian_count: float
-  max_pedestrian_count: float
-  mean_bicycle_count: float
-  max_bicycle_count: float
+  # Counts
+  car_count_mean: float
+  car_count_max: float
+  pedestrian_count_mean: float
+  pedestrian_count_max: float
+  bicycle_count_mean: float
+  bicycle_count_max: float
+  # Car
+  car_min_ttc_min: float
+  car_min_ttc_p10: float
+  car_fraction_ttc_below_th: float
+  car_max_num_ttc_below_th: float
+  car_min_dca_min: float
+  car_min_dca_p10: float
+  car_fraction_dca_below_th: float
+  car_ttc_exposure_th: float
+  # Pedestrian
+  pedestrian_min_ttc_min: float
+  pedestrian_min_ttc_p10: float
+  pedestrian_fraction_ttc_below_th: float
+  pedestrian_max_num_ttc_below_th: float
+  pedestrian_min_dca_min: float
+  pedestrian_min_dca_p10: float
+  pedestrian_fraction_dca_below_th: float
+  pedestrian_ttc_exposure_th: float
+  # Bicycle
+  bicycle_min_ttc_min: float
+  bicycle_min_ttc_p10: float
+  bicycle_fraction_ttc_below_th: float
+  bicycle_max_num_ttc_below_th: float
+  bicycle_min_dca_min: float
+  bicycle_min_dca_p10: float
+  bicycle_fraction_dca_below_th: float
+  bicycle_ttc_exposure_th: float
+
+  def __post_init__(self):
+    # ensure all fields are float
+    for field in self.__dataclass_fields__:
+      value = getattr(self, field)
+      setattr(self, field, float(value))
+
 
 
 @dataclass
