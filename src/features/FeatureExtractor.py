@@ -145,11 +145,11 @@ class TrafficFeatureExtractor(FeatureExtractor[TrafficFeatures]):
     }
 
     for col, val in fillna_dict.items():
-      df[col] = df[col].fillna(val)
       if isinstance(val, bool):
         df[col] = df[col].astype(bool)
       else:
         df[col] = df[col].astype(float)
+      df[col] = df[col].fillna(val)
 
     return df
 
