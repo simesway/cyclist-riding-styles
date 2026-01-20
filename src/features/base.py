@@ -32,14 +32,14 @@ class TrafficFeatures:
   bicycle_count_mean: float
   bicycle_count_max: float
   # Car
-  car_min_ttc_min: float
-  car_min_ttc_p10: float
-  car_fraction_ttc_below_th: float
-  car_max_num_ttc_below_th: float
-  car_min_dca_min: float
-  car_min_dca_p10: float
-  car_fraction_dca_below_th: float
-  car_ttc_exposure_th: float
+  car_min_ttc_min: float # worst-case severity
+  car_min_ttc_p10: float # robust tail severity
+  car_fraction_ttc_below_th: float # frequency of risky states
+  car_max_num_ttc_below_th: float  # peak interaction pressure
+  car_min_dca_min: float # duration x severity
+  car_min_dca_p10: float # closest spatial interaction
+  car_fraction_dca_below_th: float # robust spatial tail
+  car_ttc_exposure_th: float # sustained proximity
   # Pedestrian
   pedestrian_min_ttc_min: float
   pedestrian_min_ttc_p10: float
