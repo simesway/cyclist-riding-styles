@@ -87,6 +87,7 @@ class TrafficFeatureExtractor(FeatureExtractor[TrafficFeatures]):
 
   @staticmethod
   def p10(x):
+    x = x[np.isfinite(x)]
     return float(x.quantile(0.1)) if len(x) else 0.0
 
   @staticmethod
@@ -95,6 +96,7 @@ class TrafficFeatureExtractor(FeatureExtractor[TrafficFeatures]):
 
   @staticmethod
   def exposure(min_ttc, thresh):
+    min_ttc = min_ttc[np.isfinite(min_ttc)]
     return float((thresh - min_ttc).clip(lower=0).sum())
 
   def prepare(self, df, maneuver: Maneuver) -> pd.DataFrame:
