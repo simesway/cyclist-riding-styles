@@ -62,6 +62,8 @@ def ttc_aggregates(
   assert not missing, f"Missing column {', '.join(missing)}"
 
   df = df[req_cols].copy()
+  finite = np.isfinite(df[req_cols]).all(axis=1)
+  df = df[finite].copy()
   if category_id is not None:
     df = df[df["category"] == category_id]
 
@@ -100,6 +102,10 @@ def ttc_aggregates(
 
   df["ttc"] = ttc
   df["dca"] = dca
+
+  # replace inf by nan to avoid subtraction by inf in aggregate
+  df["ttc"] = df["ttc"].replace(np.inf, np.nan)
+  df["dca"] = df["dca"].replace(np.inf, np.nan)
 
   agg = (
     df.groupby("timestamp")
