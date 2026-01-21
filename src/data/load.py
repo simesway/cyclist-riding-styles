@@ -4,7 +4,8 @@ import pandas as pd
 from pathlib import Path
 from dataclasses import asdict
 
-from features.base import OvertakingFeatures, FollowingFeatures, RidingFeatures, TrafficFeatures, InfrastructureFeatures
+from features.base import OvertakingFeatures, FollowingFeatures, RidingFeatures, TrafficFeatures, \
+  InfrastructureFeatures, RegimeAggregation
 from maneuvers.base import OvertakingManeuver, FollowingManeuver, ManeuverMeta, WindowRecord
 
 
@@ -77,6 +78,7 @@ def load_overtaking(path):
   out = []
   for d in data:
     d['features'] = OvertakingFeatures(**d['features'])
+    d['regime_aggregation'] = RegimeAggregation(**d['regime_aggregation'])
     out.append(OvertakingManeuver(**d))
   return out
 
@@ -88,6 +90,7 @@ def load_following(path):
   out = []
   for d in data:
     d['features'] = FollowingFeatures(**d['features'])
+    d['regime_aggregation'] = RegimeAggregation(**d['regime_aggregation'])
     out.append(FollowingManeuver(**d))
   return out
 
