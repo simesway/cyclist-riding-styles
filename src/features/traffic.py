@@ -113,9 +113,9 @@ def ttc_aggregates(
       **{
         f"{prefix}min_ttc": ("ttc", "min"),
         f"{prefix}any_ttc_below_th":
-          ("ttc", lambda x: (x < t_thresh).any()),
+          ("ttc", lambda x: np.any(x < t_thresh)),
         f"{prefix}num_ttc_below_th":
-          ("ttc", lambda x: (x < t_thresh).sum()),
+          ("ttc", lambda x: np.sum(x < t_thresh)),
         f"{prefix}min_dca": ("dca", "min"),
       }
     )
