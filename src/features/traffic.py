@@ -112,7 +112,7 @@ def ttc_aggregates(
   for th in t_thresh:
     th_str = str(th).replace(".", "_")
     agg_dict[f"{prefix}any_ttc_below_{th_str}s"] = ("ttc", lambda x, th=th: np.any(x < th))
-    agg_dict[f"{prefix}any_ttc_below_{th_str}s"] = ("ttc", lambda x, th=th: np.sum(x < th))
+    agg_dict[f"{prefix}num_ttc_below_{th_str}s"] = ("ttc", lambda x, th=th: np.sum(x < th))
 
   return (
     df.groupby("timestamp")
