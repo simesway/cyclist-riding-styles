@@ -78,7 +78,8 @@ def load_overtaking(path):
   out = []
   for d in data:
     d['features'] = OvertakingFeatures(**d['features'])
-    d['regime_aggregation'] = RegimeAggregation(**d['regime_aggregation'])
+    if d['regime_aggregation'] is not None:
+      d['regime_aggregation'] = RegimeAggregation(**d['regime_aggregation'])
     out.append(OvertakingManeuver(**d))
   return out
 
@@ -90,7 +91,8 @@ def load_following(path):
   out = []
   for d in data:
     d['features'] = FollowingFeatures(**d['features'])
-    d['regime_aggregation'] = RegimeAggregation(**d['regime_aggregation'])
+    if d['regime_aggregation'] is not None:
+      d['regime_aggregation'] = RegimeAggregation(**d['regime_aggregation'])
     out.append(FollowingManeuver(**d))
   return out
 
