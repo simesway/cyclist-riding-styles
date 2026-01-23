@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 
 from abc import ABC, abstractmethod
-from typing import Generic, TypeVar
+from typing import Generic, TypeVar, List
 
 import trafficfeatures.instant as inst
 import trafficfeatures.opendrive as odr
@@ -77,12 +77,11 @@ class TrafficFeatureExtractor(FeatureExtractor[TrafficFeatures]):
       self,
       raw_trajectories: pd.DataFrame,
       horizon: float = 6.0,
-      risk_ttc_thresh: float=2.0,
       dca_threshold: float=5.0,
   ):
     self.extractor = EncounterExtractor(raw_trajectories)
     self.horizon = horizon
-    self.risk_ttc_thresh = risk_ttc_thresh
+    self.risk_ttc_thresh: List[float] = [1.5, 2, 3]
     self.dca_threshold = dca_threshold
 
   @staticmethod
@@ -102,7 +101,8 @@ class TrafficFeatureExtractor(FeatureExtractor[TrafficFeatures]):
   def prepare(self, df, maneuver: Maneuver) -> pd.DataFrame:
     sub_df = self.extractor.get_encounters(maneuver.ego_id, 20, maneuver.t_start, maneuver.t_end)
 
-    sub_df = sub_df[(sub_df["distance"] <= 30) & (sub_df["distance"] >= 0.4)]
+    sub_df = sub_df[(sub_df["distance"] <= 30) & (sub_df["distance"] >= 0.5)]
+    sub_df = sub_df[np.hypot(sub_df["vx_rel"], sub_df["vy_rel"]) >= 0.1]
     sub_df["velocity"] = inst.magnitude(sub_df, ["velocity_x", "velocity_y"])
     sub_df = sub_df[sub_df["velocity"] >= 0.5]
 
@@ -123,28 +123,24 @@ class TrafficFeatureExtractor(FeatureExtractor[TrafficFeatures]):
 
     horizon = self.horizon
 
-    ttc_df = ttc_aggregates(sub_df, 1.2, category_id=1, prefix="car", max_horizon=horizon, t_thresh=self.risk_ttc_thresh)
+
+    ttc_df = ttc_aggregates(sub_df, r_safe=3.5, category_id=1, prefix="car", max_horizon=horizon, t_thresh=self.risk_ttc_thresh)
     df = df.merge(ttc_df, on="timestamp", how="left")
-    ttc_df = ttc_aggregates(sub_df, 0.5, category_id=2, prefix="pedestrian", max_horizon=horizon, t_thresh=self.risk_ttc_thresh)
+    ttc_df = ttc_aggregates(sub_df, r_safe=1.2, category_id=2, prefix="pedestrian", max_horizon=horizon, t_thresh=self.risk_ttc_thresh)
     df = df.merge(ttc_df, on="timestamp", how="left")
-    ttc_df = ttc_aggregates(sub_df, .75, category_id=3, prefix="bicycle", max_horizon=horizon, t_thresh=self.risk_ttc_thresh)
+    ttc_df = ttc_aggregates(sub_df, r_safe=1.8, category_id=3, prefix="bicycle", max_horizon=horizon, t_thresh=self.risk_ttc_thresh)
     df = df.merge(ttc_df, on="timestamp", how="left")
 
+    fillna_dict = {}
 
-    fillna_dict = {
-      "car_min_ttc": horizon,
-      "car_min_dca": np.inf,
-      "car_any_ttc_below_th": False,
-      "car_num_ttc_below_th": 0,
-      "pedestrian_min_ttc": horizon,
-      "pedestrian_min_dca": np.inf,
-      "pedestrian_any_ttc_below_th": False,
-      "pedestrian_num_ttc_below_th": 0,
-      "bicycle_min_ttc": horizon,
-      "bicycle_min_dca": np.inf,
-      "bicycle_any_ttc_below_th": False,
-      "bicycle_num_ttc_below_th": 0,
-    }
+    for prefix in ["car", "pedestrian", "bicycle"]:
+      fillna_dict[f"{prefix}_min_ttc"] = horizon
+      fillna_dict[f"{prefix}_min_dca"] = np.inf
+
+      for th in self.risk_ttc_thresh:
+        th_str = str(th).replace(".", "_")
+        fillna_dict[f"{prefix}_any_ttc_below_{th_str}s"] = False
+        fillna_dict[f"{prefix}_num_ttc_below_{th_str}s"] = 0
 
     for col, val in fillna_dict.items():
       if isinstance(val, bool):
@@ -169,32 +165,50 @@ class TrafficFeatureExtractor(FeatureExtractor[TrafficFeatures]):
       # Car
       car_min_ttc_min=float(df["car_min_ttc"].min()),
       car_min_ttc_p10=self.p10(df["car_min_ttc"]),
-      car_fraction_ttc_below_th=self.frac(df["car_any_ttc_below_th"]),
-      car_max_num_ttc_below_th=float(df["car_num_ttc_below_th"].max()),
+      car_fraction_ttc_below_1_5s=self.frac(df["car_any_ttc_below_1_5s"]),
+      car_max_num_ttc_below_1_5s=float(df["car_num_ttc_below_1_5s"].max()),
+      car_fraction_ttc_below_2s=self.frac(df["car_any_ttc_below_2s"]),
+      car_max_num_ttc_below_2s=float(df["car_num_ttc_below_2s"].max()),
+      car_fraction_ttc_below_3s=self.frac(df["car_any_ttc_below_3s"]),
+      car_max_num_ttc_below_3s=float(df["car_num_ttc_below_3s"].max()),
       car_min_dca_min=float(df["car_min_dca"].min()),
       car_min_dca_p10=self.p10(df["car_min_dca"]),
       car_fraction_dca_below_th=self.frac(df["car_min_dca"] < dca_th),
-      car_ttc_exposure_th=self.exposure(df["car_min_ttc"], self.risk_ttc_thresh),
+      car_ttc_exposure_1_5s=self.exposure(df["car_min_ttc"], 1.5),
+      car_ttc_exposure_2s=self.exposure(df["car_min_ttc"], 2.0),
+      car_ttc_exposure_3s=self.exposure(df["car_min_ttc"], 3.0),
 
       # Pedestrian
       pedestrian_min_ttc_min=float(df["pedestrian_min_ttc"].min()),
       pedestrian_min_ttc_p10=self.p10(df["pedestrian_min_ttc"]),
-      pedestrian_fraction_ttc_below_th=self.frac(df["pedestrian_any_ttc_below_th"]),
-      pedestrian_max_num_ttc_below_th=float(df["pedestrian_num_ttc_below_th"].max()),
+      pedestrian_fraction_ttc_below_1_5s=self.frac(df["pedestrian_any_ttc_below_1_5s"]),
+      pedestrian_max_num_ttc_below_1_5s=float(df["pedestrian_num_ttc_below_1_5s"].max()),
+      pedestrian_fraction_ttc_below_2s=self.frac(df["pedestrian_any_ttc_below_2s"]),
+      pedestrian_max_num_ttc_below_2s=float(df["pedestrian_num_ttc_below_2s"].max()),
+      pedestrian_fraction_ttc_below_3s=self.frac(df["pedestrian_any_ttc_below_3s"]),
+      pedestrian_max_num_ttc_below_3s=float(df["pedestrian_num_ttc_below_3s"].max()),
       pedestrian_min_dca_min=float(df["pedestrian_min_dca"].min()),
       pedestrian_min_dca_p10=self.p10(df["pedestrian_min_dca"]),
       pedestrian_fraction_dca_below_th=self.frac(df["pedestrian_min_dca"] < dca_th),
-      pedestrian_ttc_exposure_th=self.exposure(df["pedestrian_min_ttc"], self.risk_ttc_thresh),
+      pedestrian_ttc_exposure_1_5s=self.exposure(df["pedestrian_min_ttc"], 1.5),
+      pedestrian_ttc_exposure_2s=self.exposure(df["pedestrian_min_ttc"], 2.0),
+      pedestrian_ttc_exposure_3s=self.exposure(df["pedestrian_min_ttc"], 3.0),
 
       # Bicycle
       bicycle_min_ttc_min=float(df["bicycle_min_ttc"].min()),
       bicycle_min_ttc_p10=self.p10(df["bicycle_min_ttc"]),
-      bicycle_fraction_ttc_below_th=self.frac(df["bicycle_any_ttc_below_th"]),
-      bicycle_max_num_ttc_below_th=float(df["bicycle_num_ttc_below_th"].max()),
+      bicycle_fraction_ttc_below_1_5s=self.frac(df["bicycle_any_ttc_below_1_5s"]),
+      bicycle_max_num_ttc_below_1_5s=float(df["bicycle_num_ttc_below_1_5s"].max()),
+      bicycle_fraction_ttc_below_2s=self.frac(df["bicycle_any_ttc_below_2s"]),
+      bicycle_max_num_ttc_below_2s=float(df["bicycle_num_ttc_below_2s"].max()),
+      bicycle_fraction_ttc_below_3s=self.frac(df["bicycle_any_ttc_below_3s"]),
+      bicycle_max_num_ttc_below_3s=float(df["bicycle_num_ttc_below_3s"].max()),
       bicycle_min_dca_min=float(df["bicycle_min_dca"].min()),
       bicycle_min_dca_p10=self.p10(df["bicycle_min_dca"]),
       bicycle_fraction_dca_below_th=self.frac(df["bicycle_min_dca"] < dca_th),
-      bicycle_ttc_exposure_th=self.exposure(df["bicycle_min_ttc"], self.risk_ttc_thresh),
+      bicycle_ttc_exposure_1_5s=self.exposure(df["bicycle_min_ttc"], 1.5),
+      bicycle_ttc_exposure_2s=self.exposure(df["bicycle_min_ttc"], 2.0),
+      bicycle_ttc_exposure_3s=self.exposure(df["bicycle_min_ttc"], 3.0),
     )
 
 class InfrastructureFeatureExtractor(FeatureExtractor[InfrastructureFeatures]):

@@ -31,33 +31,60 @@ class TrafficFeatures:
   pedestrian_count_max: float
   bicycle_count_mean: float
   bicycle_count_max: float
+
   # Car
   car_min_ttc_min: float # worst-case severity
   car_min_ttc_p10: float # robust tail severity
-  car_fraction_ttc_below_th: float # frequency of risky states
-  car_max_num_ttc_below_th: float  # peak interaction pressure
-  car_min_dca_min: float # duration x severity
-  car_min_dca_p10: float # closest spatial interaction
-  car_fraction_dca_below_th: float # robust spatial tail
-  car_ttc_exposure_th: float # sustained proximity
+
+  car_fraction_ttc_below_1_5s: float # frequency of risky states
+  car_max_num_ttc_below_1_5s: float  # peak interaction pressure
+  car_fraction_ttc_below_2s: float # frequency of risky states
+  car_max_num_ttc_below_2s: float  # peak interaction pressure
+  car_fraction_ttc_below_3s: float # frequency of risky states
+  car_max_num_ttc_below_3s: float  # peak interaction pressure
+  car_ttc_exposure_1_5s: float
+  car_ttc_exposure_2s: float
+  car_ttc_exposure_3s: float
+
+  car_min_dca_min: float  # closest spatial interaction
+  car_min_dca_p10: float  # robust spatial tail
+  car_fraction_dca_below_th: float # sustained proximity
+
   # Pedestrian
   pedestrian_min_ttc_min: float
   pedestrian_min_ttc_p10: float
-  pedestrian_fraction_ttc_below_th: float
-  pedestrian_max_num_ttc_below_th: float
+
+  pedestrian_fraction_ttc_below_1_5s: float
+  pedestrian_max_num_ttc_below_1_5s: float
+  pedestrian_fraction_ttc_below_2s: float
+  pedestrian_max_num_ttc_below_2s: float
+  pedestrian_fraction_ttc_below_3s: float
+  pedestrian_max_num_ttc_below_3s: float
+  pedestrian_ttc_exposure_1_5s: float
+  pedestrian_ttc_exposure_2s: float
+  pedestrian_ttc_exposure_3s: float
+
   pedestrian_min_dca_min: float
   pedestrian_min_dca_p10: float
   pedestrian_fraction_dca_below_th: float
-  pedestrian_ttc_exposure_th: float
+
   # Bicycle
   bicycle_min_ttc_min: float
   bicycle_min_ttc_p10: float
-  bicycle_fraction_ttc_below_th: float
-  bicycle_max_num_ttc_below_th: float
+
+  bicycle_fraction_ttc_below_1_5s: float
+  bicycle_max_num_ttc_below_1_5s: float
+  bicycle_fraction_ttc_below_2s: float
+  bicycle_max_num_ttc_below_2s: float
+  bicycle_fraction_ttc_below_3s: float
+  bicycle_max_num_ttc_below_3s: float
+  bicycle_ttc_exposure_1_5s: float
+  bicycle_ttc_exposure_2s: float
+  bicycle_ttc_exposure_3s: float
+
   bicycle_min_dca_min: float
   bicycle_min_dca_p10: float
   bicycle_fraction_dca_below_th: float
-  bicycle_ttc_exposure_th: float
 
   def __post_init__(self):
     # ensure all fields are float
