@@ -106,9 +106,9 @@ class TrafficFeatures:
 @dataclass
 class InfrastructureFeatures:
   # Road type features
-  on_motorway: bool
-  on_bikelane: bool
-  on_sidewalk: bool
+  p_on_motorway: float
+  p_on_bikelane: float
+  p_on_sidewalk: float
 
   offset_lane_center: float
   rel_offset_lane_center: float

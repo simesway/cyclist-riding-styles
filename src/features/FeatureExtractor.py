@@ -254,9 +254,9 @@ class InfrastructureFeatureExtractor(FeatureExtractor[InfrastructureFeatures]):
 
   def extract(self, df, **_) -> InfrastructureFeatures:
     return InfrastructureFeatures(
-      on_motorway=bool(df["on_motorway"].any()),
-      on_bikelane=bool(df["on_bikelane"].mean() > 0.5),
-      on_sidewalk=bool(df["on_sidewalk"].any()),
+      p_on_motorway=float(df["on_motorway"].mean()),
+      p_on_bikelane=float(df["on_bikelane"].mean()),
+      p_on_sidewalk=float(df["on_sidewalk"].mean()),
 
       offset_lane_center=float(df["offset_lane_center"].mean()),
       rel_offset_lane_center=float(df["rel_offset_lane_center"].mean()),
