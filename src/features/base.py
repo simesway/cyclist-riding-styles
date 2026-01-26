@@ -46,6 +46,9 @@ class TrafficFeatures:
   car_ttc_exposure_2s: float
   car_ttc_exposure_3s: float
 
+  car_max_drac: float  # maximum deceleration rate to avoid crash
+  car_max_drac_p90: float  # robust deceleration tail
+
   car_min_dca_min: float  # closest spatial interaction
   car_min_dca_p10: float  # robust spatial tail
   car_fraction_dca_below_th: float # sustained proximity
@@ -64,6 +67,9 @@ class TrafficFeatures:
   pedestrian_ttc_exposure_2s: float
   pedestrian_ttc_exposure_3s: float
 
+  pedestrian_max_drac: float
+  pedestrian_max_drac_p90: float
+
   pedestrian_min_dca_min: float
   pedestrian_min_dca_p10: float
   pedestrian_fraction_dca_below_th: float
@@ -81,6 +87,9 @@ class TrafficFeatures:
   bicycle_ttc_exposure_1_5s: float
   bicycle_ttc_exposure_2s: float
   bicycle_ttc_exposure_3s: float
+
+  bicycle_max_drac: float
+  bicycle_max_drac_p90: float
 
   bicycle_min_dca_min: float
   bicycle_min_dca_p10: float
@@ -103,6 +112,7 @@ class InfrastructureFeatures:
 
   offset_lane_center: float
   rel_offset_lane_center: float
+  rel_position_lane: float
 
   left_clearance: float
   min_lateral_clearance: float

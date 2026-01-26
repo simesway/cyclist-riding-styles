@@ -8,8 +8,8 @@ import trafficfeatures.instant as inst
 import trafficfeatures.opendrive as odr
 
 from features.infrastructure import on_lane, offset_lane_center, rel_offset_norm, min_lateral_clearance, \
-  max_lateral_clearance, distance_to_signal
-from features.traffic import merge_column, counts_within_radius, ttc_aggregates
+  max_lateral_clearance, distance_to_signal, rel_position_lane
+from features.traffic import merge_column, counts_within_radius, ttc_aggregates, max_drac
 from features.vehicle_dynamics import longitudinal_acceleration, rotation_fluctuation_signal
 from features.volatility import stats_basic, max_abs
 from maneuvers.base import Maneuver
@@ -90,6 +90,11 @@ class TrafficFeatureExtractor(FeatureExtractor[TrafficFeatures]):
     return float(x.quantile(0.1)) if len(x) else 0.0
 
   @staticmethod
+  def p90(x):
+    x = x[np.isfinite(x)]
+    return float(x.quantile(0.9)) if len(x) else 0.0
+
+  @staticmethod
   def frac(x):
     return float(x.mean()) if len(x) else 0.0
 
@@ -131,11 +136,19 @@ class TrafficFeatureExtractor(FeatureExtractor[TrafficFeatures]):
     ttc_df = ttc_aggregates(sub_df, r_safe=1.8, category_id=3, prefix="bicycle", max_horizon=horizon, t_thresh=self.risk_ttc_thresh)
     df = df.merge(ttc_df, on="timestamp", how="left")
 
+    drac_df = max_drac(sub_df, r_safe=3.5, category_id=1, prefix="car")
+    df = df.merge(drac_df, on="timestamp", how="left")
+    drac_df = max_drac(sub_df, r_safe=1.2, category_id=2, prefix="pedestrian")
+    df = df.merge(drac_df, on="timestamp", how="left")
+    drac_df = max_drac(sub_df, r_safe=1.8, category_id=3, prefix="bicycle")
+    df = df.merge(drac_df, on="timestamp", how="left")
+
     fillna_dict = {}
 
     for prefix in ["car", "pedestrian", "bicycle"]:
       fillna_dict[f"{prefix}_min_ttc"] = horizon
       fillna_dict[f"{prefix}_min_dca"] = np.inf
+      fillna_dict[f"{prefix}_max_drac"] = 0.0
 
       for th in self.risk_ttc_thresh:
         th_str = str(th).replace(".", "_")
@@ -173,6 +186,8 @@ class TrafficFeatureExtractor(FeatureExtractor[TrafficFeatures]):
       car_max_num_ttc_below_3s=float(df["car_num_ttc_below_3s"].max()),
       car_min_dca_min=float(df["car_min_dca"].min()),
       car_min_dca_p10=self.p10(df["car_min_dca"]),
+      car_max_drac=float(df["car_max_drac"].max()),
+      car_max_drac_p90=self.p90(df["car_max_drac"]),
       car_fraction_dca_below_th=self.frac(df["car_min_dca"] < dca_th),
       car_ttc_exposure_1_5s=self.exposure(df["car_min_ttc"], 1.5),
       car_ttc_exposure_2s=self.exposure(df["car_min_ttc"], 2.0),
@@ -189,6 +204,8 @@ class TrafficFeatureExtractor(FeatureExtractor[TrafficFeatures]):
       pedestrian_max_num_ttc_below_3s=float(df["pedestrian_num_ttc_below_3s"].max()),
       pedestrian_min_dca_min=float(df["pedestrian_min_dca"].min()),
       pedestrian_min_dca_p10=self.p10(df["pedestrian_min_dca"]),
+      pedestrian_max_drac=float(df["pedestrian_max_drac"].max()),
+      pedestrian_max_drac_p90=self.p90(df["pedestrian_max_drac"]),
       pedestrian_fraction_dca_below_th=self.frac(df["pedestrian_min_dca"] < dca_th),
       pedestrian_ttc_exposure_1_5s=self.exposure(df["pedestrian_min_ttc"], 1.5),
       pedestrian_ttc_exposure_2s=self.exposure(df["pedestrian_min_ttc"], 2.0),
@@ -205,6 +222,8 @@ class TrafficFeatureExtractor(FeatureExtractor[TrafficFeatures]):
       bicycle_max_num_ttc_below_3s=float(df["bicycle_num_ttc_below_3s"].max()),
       bicycle_min_dca_min=float(df["bicycle_min_dca"].min()),
       bicycle_min_dca_p10=self.p10(df["bicycle_min_dca"]),
+      bicycle_max_drac=float(df["bicycle_max_drac"].max()),
+      bicycle_max_drac_p90=self.p90(df["bicycle_max_drac"]),
       bicycle_fraction_dca_below_th=self.frac(df["bicycle_min_dca"] < dca_th),
       bicycle_ttc_exposure_1_5s=self.exposure(df["bicycle_min_ttc"], 1.5),
       bicycle_ttc_exposure_2s=self.exposure(df["bicycle_min_ttc"], 2.0),
@@ -224,6 +243,7 @@ class InfrastructureFeatureExtractor(FeatureExtractor[InfrastructureFeatures]):
     df["rel_offset_lane_center"] = rel_offset_norm(df)
     df["min_lateral_clearance"] = min_lateral_clearance(df)
     df["max_lateral_clearance"] = max_lateral_clearance(df)
+    df["rel_position_lane"] = rel_position_lane(df)
 
     # distance based on (Rupi & Krizek 2019)
     df["distance_traffic_light"] = distance_to_signal(df, self.signals, "TrafficLight", max_radius=60)
@@ -240,6 +260,7 @@ class InfrastructureFeatureExtractor(FeatureExtractor[InfrastructureFeatures]):
 
       offset_lane_center=float(df["offset_lane_center"].mean()),
       rel_offset_lane_center=float(df["rel_offset_lane_center"].mean()),
+      rel_position_lane=float(df["rel_position_lane"].mean()),
 
       left_clearance=float(df["inner_dist"].mean()),
       min_lateral_clearance=float(df["min_lateral_clearance"].mean()),

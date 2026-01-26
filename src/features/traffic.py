@@ -138,35 +138,32 @@ def max_drac(
   assert not missing, f"Missing column {', '.join(missing)}"
 
   df = df[req_cols].copy()
-  finite = np.isfinite(df[req_cols]).all(axis=1)
-  df = df[finite].copy()
+  df = df[np.isfinite(df[req_cols]).all(axis=1)].copy()
+
   if category_id is not None:
     df = df[df["category"] == category_id]
 
   if prefix:
     prefix = f"{prefix}_"
 
-  eps = 1e-6
+  s_min = 0.2 # minimum effective stopping distance (m)
+  a_max = 15.0 # maximum reasonable deceleration (m/s^2)
 
   # closing speed (radial)
   v_r = -(df["dx"] * df["vx_rel"] + df["dy"] * df["vy_rel"]) / df["distance"]
-  v_r = np.maximum(v_r, 0)
+
+  mask = (v_r > 0) & (df["distance"] > r_safe)
+  df = df[mask]
 
   # effective stopping distance
-  s = np.maximum(df["distance"] - r_safe, eps)
-
-  # constant deceleration needed to stop before r_safe
+  s = np.maximum(df["distance"] - r_safe, s_min)
   a_req = (v_r ** 2) / (2 * s)
 
-  df["a_req"] = a_req
+  df["a_req"] = np.clip(a_req, 0, a_max)
 
   agg = (
     df.groupby("timestamp")
-    .agg(
-      **{
-        f"{prefix}max_required_decel": ("a_req", "max"),
-      }
-    )
+    .agg(**{f"{prefix}max_drac": ("a_req", "max")})
     .reset_index()
   )
 

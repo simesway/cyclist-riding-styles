@@ -53,6 +53,10 @@ def rel_offset_norm(df):
   return np.abs(df["offset_lane_center"] / df["lane_width"])
 
 
+def rel_position_lane(df):
+  return df["inner_dist"] / df["lane_width"]
+
+
 def min_lateral_clearance(df):
   return df[['inner_dist', 'outer_dist']].min(axis=1)
 
