@@ -9,22 +9,31 @@ from maneuvers.base import WindowRecord, Maneuver, ManeuverSlicer, ManeuverMeta
 
 class SlidingWindows:
   """Sliding windows over a trajectory segment."""
-  def __init__(self, win_s: float, overlap: float):
+  def __init__(self, win_s: float, overlap: float, fps: float = 12.5):
     assert 0 <= overlap < 1, "overlap must be in [0, 1)"
     self.win_s = win_s
     self.overlap = overlap
     self.step = win_s * (1 - overlap)
+    self.dt = 1 / fps # frame interval
+
+  def _snap_to_frame(self, t: float) -> float:
+    """Snap time to nearest frame based on fps."""
+    return round(t / self.dt) * self.dt
 
   def compute_window_bounds(self, t_start: float, t_end: float) -> List[Tuple[float, float]]:
     """Compute sliding window bounds for a given time range."""
     bounds = []
     t = t_start
     while t + self.win_s <= t_end + 1e-8:
-      bounds.append((t, t + self.win_s))
+      t0 = self._snap_to_frame(t)
+      t1 = self._snap_to_frame(t + self.win_s)
+      bounds.append((t0, t1))
       t += self.step
 
     if bounds and bounds[-1][1] < t_end:
-      bounds.append((t_end - self.win_s, t_end))
+      t0 = self._snap_to_frame(t_end - self.win_s)
+      t1 = self._snap_to_frame(t_end)
+      bounds.append((t0, t1))
 
     return bounds
 
@@ -32,7 +41,6 @@ class SlidingWindows:
     """Extract windows from the DataFrame."""
     t_start = df['timestamp'].min()
     t_end = df['timestamp'].max()
-
     window_bounds = self.compute_window_bounds(t_start, t_end)
 
     windows = []
