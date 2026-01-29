@@ -29,10 +29,6 @@ class ClusteringPipeline:
     self._labels = None
 
   def run(self, items: Iterable) -> Tuple[np.ndarray, np.ndarray, List]:
-    """
-    Modifies WindowRecords in-place by assigning
-    w.meta.local_regime
-    """
     X, valid_items = self.builder.to_numpy(items)
 
     if len(valid_items) == 0:
@@ -54,7 +50,10 @@ class ClusteringPipeline:
     return X, labels, valid_items
 
   def get_cluster_centers(self, in_original_units=True) -> pd.DataFrame:
-    centers_pc = self.clusterer.model_.cluster_centers_
+    if hasattr(self.clusterer, 'model_') and hasattr(self.clusterer.model_, 'cluster_centers_'):
+      centers_pc = self.clusterer.model_.cluster_centers_
+    else:
+      return pd.DataFrame(columns=self.adapter.feature_names)
 
     centers = self.pca.inverse_transform(centers_pc)
     if in_original_units:
@@ -120,7 +119,4 @@ class ClusteringPipeline:
   def compute_cluster_metrics(self) -> pd.DataFrame:
     if self._labels is None or self._X_scaled is None:
         raise RuntimeError("Pipeline has not been run")
-    return self.compute_cluster_metrics_from_X(
-      self._X_scaled,
-      self._labels
-    )
+    return self.compute_cluster_metrics_from_X(self._X_scaled, self._labels)
