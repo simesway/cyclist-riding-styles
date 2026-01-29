@@ -38,6 +38,9 @@ class RegimeStabilityTester:
     ref = self.clusterer_factory(random_state=self.random_state)
     labels_ref = ref.fit_predict(X)
 
+    if len(set(labels_ref)) <= 1:
+      return StabilityResult(np.nan, np.nan, np.nan)
+
     # subsample stability
     idx = rng.choice(len(X), int(self.subsample_frac * len(X)), replace=False)
     sub = self.clusterer_factory(random_state=rng.integers(1e9))
@@ -58,7 +61,11 @@ class RegimeStabilityTester:
     noise = rng.normal(0, self.noise_scale * scale, X.shape)
     noisy = self.clusterer_factory(random_state=rng.integers(1e9))
     labels_noisy = noisy.fit_predict(X + noise)
-    ari_noise = adjusted_rand_score(labels_ref, labels_noisy)
+
+    if len(set(labels_ref)) <= 1:
+      ari_noise = np.nan # single cluster case
+    else:
+      ari_noise = adjusted_rand_score(labels_ref, labels_noisy)
 
     return StabilityResult(ari_sub, ari_seed, ari_noise)
 
