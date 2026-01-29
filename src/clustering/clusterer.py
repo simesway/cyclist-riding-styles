@@ -1,5 +1,6 @@
 import numpy as np
-from sklearn.cluster import KMeans
+from sklearn.cluster import KMeans, DBSCAN
+from sklearn.mixture import GaussianMixture
 from sklearn.metrics import silhouette_score
 
 
@@ -13,6 +14,10 @@ class Clusterer:
     raise NotImplementedError
 
   def predict(self, X: np.ndarray) -> np.ndarray:
+    raise NotImplementedError
+
+  @property
+  def n_clusters(self) -> int:
     raise NotImplementedError
 
 
@@ -39,6 +44,10 @@ class KMeansClusterer(Clusterer):
 
   def predict(self, X: np.ndarray) -> np.ndarray:
     return self.model_.predict(X)
+
+  @property
+  def n_clusters(self):
+    return self.k_
 
 
 
@@ -82,3 +91,51 @@ class AutoKMeansClusterer(Clusterer):
 
   def predict(self, X: np.ndarray) -> np.ndarray:
     return self.model_.predict(X)
+
+  @property
+  def n_clusters(self) -> int:
+    return self.k_
+
+
+class GMMClusterer(Clusterer):
+  def __init__(self, n_components: int, random_state: int | None = None):
+    self.n_components = n_components
+    self.random_state = random_state
+    self.model_ = None
+
+  def get_params(self) -> dict:
+    return {"n_components": self.n_components, "random_state": self.random_state}
+
+  def fit_predict(self, X: np.ndarray) -> np.ndarray:
+    self.model_ = GaussianMixture(n_components=self.n_components, random_state=self.random_state)
+    labels = self.model_.fit_predict(X)
+    return labels
+
+  def predict(self, X: np.ndarray) -> np.ndarray:
+    return self.model_.predict(X)
+
+  @property
+  def n_clusters(self):
+    return self.n_components
+
+
+class DBSCANClusterer(Clusterer):
+  def __init__(self, eps: float, min_samples: int):
+    self.eps = eps # Max distance between two samples for one to be considered as in the neighborhood of the other
+    self.min_samples = min_samples # Number of samples in a neighborhood for a point to be considered as a core point
+    self.model_ = None
+
+  def get_params(self) -> dict:
+    return {"eps": self.eps, "min_samples": self.min_samples}
+
+  def fit_predict(self, X: np.ndarray) -> np.ndarray:
+    self.model_ = DBSCAN(eps=self.eps, min_samples=self.min_samples)
+    labels = self.model_.fit_predict(X)
+    return labels
+
+  def predict(self, X: np.ndarray) -> np.ndarray:
+    return self.model_.fit_predict(X)
+
+  @property
+  def n_clusters(self):
+    return len(set(self.model_.labels_)) - (1 if -1 in self.model_.labels_ else 0)
