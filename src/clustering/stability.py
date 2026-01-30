@@ -3,7 +3,7 @@ import pandas as pd
 from dataclasses import dataclass
 from tqdm import tqdm
 
-from sklearn.metrics import adjusted_rand_score
+from sklearn.metrics import adjusted_rand_score, silhouette_score
 
 
 @dataclass
@@ -11,6 +11,7 @@ class StabilityResult:
     ari_subsample: float | tuple
     ari_seed: float | tuple
     ari_noise: float | tuple
+    silhouette: float | tuple
 
 
 class RegimeStabilityTester:
@@ -19,11 +20,13 @@ class RegimeStabilityTester:
       clusterer_factory,
       noise_scale: float = 0.05,
       subsample_frac: float = 0.8,
+      use_subsample_for_silhouette: bool = True,
       random_state: int | None = None,
   ):
     self.clusterer_factory = clusterer_factory
     self.noise_scale = noise_scale
     self.subsample_frac = subsample_frac
+    self.use_subsample_for_silhouette = use_subsample_for_silhouette
     self.random_state = random_state
     self.results = None
 
@@ -38,7 +41,9 @@ class RegimeStabilityTester:
     ref = self.clusterer_factory(random_state=self.random_state)
     labels_ref = ref.fit_predict(X)
 
-    if len(set(labels_ref)) <= 1:
+    num_clusters = len(set(labels_ref))
+
+    if num_clusters <= 1:
       return StabilityResult(np.nan, np.nan, np.nan)
 
     # subsample stability
@@ -62,12 +67,18 @@ class RegimeStabilityTester:
     noisy = self.clusterer_factory(random_state=rng.integers(1e9))
     labels_noisy = noisy.fit_predict(X + noise)
 
-    if len(set(labels_ref)) <= 1:
+    if num_clusters <= 1:
       ari_noise = np.nan # single cluster case
     else:
       ari_noise = adjusted_rand_score(labels_ref, labels_noisy)
 
-    return StabilityResult(ari_sub, ari_seed, ari_noise)
+    if self.use_subsample_for_silhouette:
+      sample_idx = rng.choice(len(X), int(self.subsample_frac * len(X)), replace=False)
+      silhouette = silhouette_score(X[sample_idx], labels_ref[sample_idx]) if num_clusters > 1 else np.nan
+    else:
+      silhouette = silhouette_score(X, labels_ref) if num_clusters > 1 else np.nan
+
+    return StabilityResult(ari_sub, ari_seed, ari_noise, silhouette)
 
   def run_repeated(self, X: np.ndarray, n_runs: int = 30) -> pd.DataFrame:
     records = []
@@ -83,6 +94,8 @@ class RegimeStabilityTester:
     return pd.DataFrame({
       "metric": df.columns,
       "median": df.median().values,
+      "mean": df.mean().values,
+      "std": df.std().values,
       "p10": df.quantile(0.10).values,
       "p90": df.quantile(0.90).values,
     })
