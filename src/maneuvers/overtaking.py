@@ -5,7 +5,8 @@ from typing import List, Tuple, Optional
 
 from data.smoothing import smooth
 from features.base import OvertakingFeatures
-from features.vehicle_dynamics import speed, acceleration
+from features.vehicle_dynamics import speed, acceleration, longitudinal_acceleration, lateral_acceleration, \
+  longitudinal_velocity, lateral_velocity
 from maneuvers.base import OvertakingManeuver
 from maneuvers.utils import get_lateral_longitudinal, extract_overtake_windows
 
@@ -120,12 +121,16 @@ def detect_overtaking(
       f, l = a_idx, b_idx
       long, lat = a_long_smooth, a_lat_smooth
       v_f, v_l = v_a, v_b
-      acc = acc_a
+      acc_l, acc_f = acc_a, acc_b
+      long_acc, lat_acc = longitudinal_acceleration(a), lateral_acceleration(a)
+      v_long, v_lat = longitudinal_velocity(a), lateral_velocity(a)
     else:
       f, l = b_idx, a_idx
       long, lat = b_long_smooth, b_lat_smooth
       v_f, v_l = v_b, v_a
-      acc = acc_b
+      acc_l, acc_f = acc_b, acc_a
+      long_acc, lat_acc = longitudinal_acceleration(b), lateral_acceleration(b)
+      v_long, v_lat = longitudinal_velocity(b), lateral_velocity(b)
 
     decreasing = long[start] > 0 > long[end]
     too_far = abs(lat[z]) < min_lateral_distance_cross or abs(lat[z]) > max_lateral_distance
@@ -168,6 +173,7 @@ def detect_overtaking(
     t_end = float(ts[end_idx]) if end_idx is not None else None
     t_z = float(ts[z])
     duration = t_end - t_start if t_start is not None and t_end is not None else None
+    distance = np.sqrt(long**2 + lat**2)
 
     f_min, f_max = start_idx or z, end_idx or z
     candidates.append(
@@ -179,16 +185,38 @@ def detect_overtaking(
         duration=duration,
         features=OvertakingFeatures(
           left_side=bool(lat[z] > 0),
-          long_distance_min=float(np.min(long[f_min:f_max+1])),
-          long_distance_max=float(np.max(long[f_min:f_max+1])),
+          duration_pull_out=float(t_z - t_start) if t_start is not None else None,
+          duration_merge_back=float(t_end - t_z) if t_end is not None else None,
+
+          distance_start=float(distance[f_min]),
+          distance_cross=float(distance[z]),
+          distance_end=float(distance[f_max]),
+
           lateral_offset_start=float(lat[f_min]),
+          lateral_offset_cross=float(lat[z]),
           lateral_offset_end=float(lat[f_max]),
           lateral_offset_max=float(np.max(np.abs(lat[f_min:f_max+1]))),
-          lateral_offset_cross=float(lat[z]),
-          follower_speed_mean=float(np.mean(v_f[f_min:f_max+1])),
+
+          speed_mean=float(np.mean(v_f[f_min:f_max+1])),
+          speed_max=float(np.max(v_f[f_min:f_max+1])),
+          speed_std=float(np.std(v_f[f_min:f_max+1])),
+
           leader_speed_mean=float(np.mean(v_l[f_min:f_max+1])),
-          speed_diff_mean=float(np.mean(np.abs(v_f[f_min:f_max+1] - v_l[f_min:f_max+1]))),
-          follower_acc_max=float(np.max(acc[f_min:f_max+1]))
+          leader_speed_std=float(np.std(v_l[f_min:f_max+1])),
+          leader_acc_mean=float(np.mean(acc_l[f_min:f_max+1])),
+          leader_acc_std=float(np.std(acc_l[f_min:f_max+1])),
+
+          lat_speed_max=float(np.max(np.abs(v_lat[f_min:f_max + 1]))),
+          lat_acc_max=float(np.max(lat_acc[f_min:f_max + 1])),
+          lat_acc_min=float(np.min(lat_acc[f_min:f_max + 1])),
+
+          long_acc_max=float(np.max(long_acc[f_min:f_max+1])),
+          long_acc_std=float(np.std(long_acc[f_min:f_max+1])),
+
+          rel_speed_mean=float(np.mean(np.abs(v_f[f_min:f_max+1] - v_l[f_min:f_max+1]))),
+          rel_speed_start=float(np.abs(v_f[f_min] - v_l[f_min])),
+          rel_speed_cross=float(np.abs(v_f[z] - v_l[z])),
+          rel_speed_end=float(np.abs(v_f[f_max] - v_l[f_max]))
         )
       )
     )

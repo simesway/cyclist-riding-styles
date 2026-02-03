@@ -128,16 +128,38 @@ class InfrastructureFeatures:
 @dataclass
 class OvertakingFeatures:
   left_side: bool
-  long_distance_min: float
-  long_distance_max: float
+  duration_pull_out: float
+  duration_merge_back: float
+
+  distance_start: float
+  distance_cross: float
+  distance_end: float
+
   lateral_offset_start: float
+  lateral_offset_cross: float
   lateral_offset_end: float
   lateral_offset_max: float
-  lateral_offset_cross: float
-  follower_speed_mean: float
+
+  speed_mean: float
+  speed_max: float
+  speed_std: float
+
   leader_speed_mean: float
-  speed_diff_mean: float
-  follower_acc_max: float
+  leader_speed_std: float
+  leader_acc_mean: float
+  leader_acc_std: float
+
+  lat_speed_max: float
+  lat_acc_max: float
+  lat_acc_min: float
+
+  long_acc_max: float
+  long_acc_std: float
+
+  rel_speed_mean: float
+  rel_speed_start: float
+  rel_speed_cross: float
+  rel_speed_end: float
 
 
 @dataclass
