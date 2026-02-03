@@ -8,23 +8,38 @@ class FeatureSelector:
     self.drop_features = []
 
   def fit(self, df: pd.DataFrame):
-    # --- Step 1: Correlation filtering ---
-    corr_matrix = df.corr()
-    to_drop = set()
-    for i in range(len(corr_matrix.columns)):
-      for j in range(i):
-        if abs(corr_matrix.iloc[i, j]) > self.corr_threshold:
-          to_drop.add(corr_matrix.columns[i])
-    df_reduced = df.drop(columns=to_drop)
+    # --- Initial feature set ---
+    remaining_features = list(df.columns)
 
-    # --- Step 2: VIF filtering ---
-    X = df_reduced.values
-    for i, feat in enumerate(df_reduced.columns):
-      vif = variance_inflation_factor(X, i)
-      if vif > self.vif_threshold:
-        to_drop.add(feat)
+    while True:
+      corr_matrix = df[remaining_features].corr()
+      to_drop = set()
 
-    self.drop_features = list(to_drop)
+      # --- Step 1: Correlation filtering ---
+      for i in range(len(corr_matrix.columns)):
+        for j in range(i):
+          if abs(corr_matrix.iloc[i, j]) > self.corr_threshold:
+            to_drop.add(corr_matrix.columns[i])
+
+      if not to_drop:
+        break
+
+      remaining_features = [feat for feat in remaining_features if feat not in to_drop]
+      df_reduced = df[remaining_features]
+
+      # --- Step 2: VIF filtering ---
+      X = df_reduced.values
+      for i, feat in enumerate(df_reduced.columns):
+        vif = variance_inflation_factor(X, i)
+        if vif > self.vif_threshold:
+          to_drop.add(feat)
+
+      if not to_drop:
+        break
+
+      remaining_features = [feat for feat in remaining_features if feat not in to_drop]
+
+    self.drop_features = [feat for feat in df.columns if feat not in remaining_features]
     return self.drop_features
 
   def transform(self, df: pd.DataFrame):
