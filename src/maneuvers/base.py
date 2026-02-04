@@ -91,15 +91,31 @@ class WindowRecord:
   infrastructure: Optional[InfrastructureFeatures] = None
   local_regime: Optional[int] = None
 
-  def flatten(self):
-    return {
+  def flatten(self) -> dict:
+    """
+    Flatten the window into a single dict.
+    No prefixes since feature names are unique.
+    """
+    flat = {
       **asdict(self.meta),
       "t_start": self.t_start,
       "t_end": self.t_end,
-      **flatten_optional(self.riding, "ride", RidingFeatures),
-      **flatten_optional(self.traffic, "env", TrafficFeatures),
-      **flatten_optional(self.infrastructure, "infra", InfrastructureFeatures),
+      "local_regime": self.local_regime,
     }
+
+    for fs in [self.riding, self.traffic, self.infrastructure]:
+      if fs is not None:
+        flat.update(asdict(fs))
+      else:
+        # fill missing keys with None
+        if fs is RidingFeatures:
+          flat.update({k: None for k in RidingFeatures.__dataclass_fields__})
+        elif fs is TrafficFeatures:
+          flat.update({k: None for k in TrafficFeatures.__dataclass_fields__})
+        elif fs is InfrastructureFeatures:
+          flat.update({k: None for k in InfrastructureFeatures.__dataclass_fields__})
+
+    return flat
 
 
 def group_windows_by_maneuver(
