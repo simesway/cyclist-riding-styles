@@ -80,10 +80,10 @@ class RegimeStabilityTester:
 
     return StabilityResult(ari_sub, ari_seed, ari_noise, silhouette)
 
-  def run_repeated(self, X: np.ndarray, n_runs: int = 30) -> pd.DataFrame:
+  def run_repeated(self, X: np.ndarray, n_runs: int = 30, pbar=True) -> pd.DataFrame:
     records = []
 
-    for i in tqdm(range(n_runs)):
+    for i in (tqdm(range(n_runs)) if pbar else range(n_runs)):
       r = self.run(X, run_id=i)
       records.append(r)
 

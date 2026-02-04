@@ -68,7 +68,8 @@ class ClusteringPipeline:
       items: Iterable,
       subsample_frac: float=0.8,
       noise_scale: float=0.1,
-      n_runs: int=30
+      n_runs: int=30,
+      pbar: bool=True,
   ) -> pd.DataFrame:
     X, ws = self.builder.to_numpy(items)
 
@@ -93,7 +94,7 @@ class ClusteringPipeline:
       random_state=0
     )
 
-    return tester.run_repeated(X_scaled, n_runs=n_runs)
+    return tester.run_repeated(X_scaled, n_runs=n_runs, pbar=pbar)
 
   @staticmethod
   def compute_cluster_metrics_from_X(
