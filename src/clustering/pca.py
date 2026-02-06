@@ -4,8 +4,8 @@ from sklearn.decomposition import PCA
 
 
 class PCAReducer:
-  def __init__(self, n_components: float = 0.95):
-    self.pca = PCA(n_components=n_components)
+  def __init__(self, n_components: float = 0.95, whiten: bool=True):
+    self.pca = PCA(n_components=n_components, whiten=whiten)
 
   def fit_transform(self, X):
     return self.pca.fit_transform(X)
@@ -28,7 +28,7 @@ class PCAReducer:
   def inverse_transform(self, Z: np.ndarray) -> np.ndarray:
     return self.pca.inverse_transform(Z)
 
-  def explained_variance(self) -> float:
+  def explained_variance(self):
     return self.pca.explained_variance_ratio_
 
 
