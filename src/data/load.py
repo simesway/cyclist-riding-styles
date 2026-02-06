@@ -61,7 +61,7 @@ def load_or_process(save_path, process_fn, load_fn, save_fn, force_process=False
 
 def save_list(path: str, objs: list):
   """Save a list of dataclass objects to a gzipped JSON file."""
-  with gzip.open(path, "wt", encoding="utf-8") as f:
+  with gzip.open(str(path), "wt", encoding="utf-8") as f:
     json.dump([asdict(o) for o in objs], f, separators=(",", ":"))
 
 def load_list(path: str, cls):
