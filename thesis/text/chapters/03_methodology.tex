@@ -81,6 +81,22 @@ For validated candidates, the module extracts descriptive statistics \cite{khan_
 
 For the following stages of the analysis, the maneuvers were seperated. First the maneuvers were segmented using the sliding window approach, resulting in fixed-length temporal windows of 1s duration with 50\% overlap \cite{li_volatility-based_2025, mohammadnazar_classifying_2021}, a common approach for modeling short-term driving and riding dynamics while preserving temporal continuity. For each window three sets of features are extracted and aggregated, each used by a different stage of the analysis and separated cleanly to ensure domain separation. The feature sets are Riding/Volatility, Traffic and Infrastructure descriptive features. 
 
+Since riding in and around intersections differ in dynamics from riding in straight street segments, the windows were split in two groups depending on the distance to a traffic light (easier to obtain than center of intersection). The intersection- and non-intersection-windows were clustered seperately.
+
+\subsection{Feature Selection}
+
+To reduce multicollinearity and simplify the feature space, an iterative backward feature selection procedure was employed. In each iteration, pairs of features with high absolute correlation are identified, and one feature from each pair is removed \cite{guyon_introduction_2003}. The feature with higher mean correlation to all other features is discarded. Following correlation-based removal, multicollinearity is further mitigated by computing the Variance Inflation Factor (VIF) on standardized features and removing the feature with the highest VIF exceeding the specified threshold \cite{cheng_variable_2022}. This two-step filtering is repeated until no features violate the thresholds \cite{dormann_collinearity_2013}.
+
+\subsection{Clustering Stability}
+To assess clustering stability, the performance was evaluated through the Adjusted Rand Index (ARI) and silhouette score across multiple runs. 
+
+Clustering stability was evaluated using the Adjusted Rand Index (ARI) and silhouette score across multiple runs. Stability was assessed via subsampling, random seed variation, and Gaussian noise scaled to each feature’s standard deviation, with ARI computed relative to a reference clustering. Silhouette scores were calculated for the reference clustering, and aggregated statistics (median, mean, standard deviation, 10th and 90th percentiles) summarized reliability, with single-cluster cases treated as undefined.
+
+
+\subsection{Grid Search}
+A grid search was performed to identify hyperparameters that yield interpretable clusters while maintaining high clustering quality, measured by the silhouette score and balanced sample distribution across clusters, while ensuring a minimum cluster size. For each combination, features were selected, PCA applied, and KMeans clustering performed. Stability metrics, including silhouette and Adjusted Rand Index (ARI) scores, were estimated over several runs on an 80\% stratified subsample of the data to reduce overfitting and provide more robust performance estimates.
+
+
 \subsection*{Level 1: Local Riding Behaviour (Window Level)}
 \label{meth:level1}
 
