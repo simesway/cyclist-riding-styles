@@ -1,4 +1,6 @@
+import numpy as np
 import pandas as pd
+from sklearn.preprocessing import StandardScaler
 from statsmodels.stats.outliers_influence import variance_inflation_factor
 
 class FeatureSelector:
@@ -7,39 +9,51 @@ class FeatureSelector:
     self.vif_threshold = vif_threshold
     self.drop_features = []
 
+  @staticmethod
+  def _compute_vif(X: np.ndarray):
+    return np.array([
+      variance_inflation_factor(X, i) for i in range(X.shape[1])
+    ])
+
   def fit(self, df: pd.DataFrame):
     # --- Initial feature set ---
     remaining_features = list(df.columns)
 
     while True:
-      corr_matrix = df[remaining_features].corr()
-      to_drop = set()
+      changed = False
+      df_current = df[remaining_features]
 
       # --- Step 1: Correlation filtering ---
-      for i in range(len(corr_matrix.columns)):
-        for j in range(i):
-          if abs(corr_matrix.iloc[i, j]) > self.corr_threshold:
-            to_drop.add(corr_matrix.columns[i])
+      corr = df_current.corr().abs()
+      np.fill_diagonal(corr.values, 0)
 
-      if not to_drop:
-        break
+      corr_values = corr.values
+      max_corr = corr_values.max()
 
-      remaining_features = [feat for feat in remaining_features if feat not in to_drop]
-      df_reduced = df[remaining_features]
+      if max_corr > self.corr_threshold:
+        i, j = np.unravel_index(np.argmax(corr_values), corr_values.shape)
+        f1, f2 = corr.columns[i], corr.index[j]
+
+        mean_corr = corr.mean()
+        drop = f1 if mean_corr[f1] > mean_corr[f2] else f2
+
+        remaining_features.remove(drop)
+        changed = True
 
       # --- Step 2: VIF filtering ---
-      X = df_reduced.values
-      for i, feat in enumerate(df_reduced.columns):
-        vif = variance_inflation_factor(X, i)
-        if vif > self.vif_threshold:
-          to_drop.add(feat)
+      X = StandardScaler().fit_transform(df_current[remaining_features].values)
+      vifs = self._compute_vif(X)
 
-      if not to_drop:
+      max_vif = vifs.max()
+      if max_vif > self.vif_threshold:
+        drop = remaining_features[int(np.argmax(vifs))]
+        remaining_features.remove(drop)
+        changed = True
+
+      if not changed:
         break
 
-      remaining_features = [feat for feat in remaining_features if feat not in to_drop]
-
-    self.drop_features = [feat for feat in df.columns if feat not in remaining_features]
+    self.drop_features = [c for c in df.columns if c not in remaining_features]
     return self.drop_features
 
   def transform(self, df: pd.DataFrame):
