@@ -20,13 +20,11 @@ class RegimeStabilityTester:
       clusterer_factory,
       noise_scale: float = 0.05,
       subsample_frac: float = 0.8,
-      use_subsample_for_silhouette: bool = True,
       random_state: int | None = None,
   ):
     self.clusterer_factory = clusterer_factory
     self.noise_scale = noise_scale
     self.subsample_frac = subsample_frac
-    self.use_subsample_for_silhouette = use_subsample_for_silhouette
     self.random_state = random_state
     self.results = None
 
@@ -72,11 +70,7 @@ class RegimeStabilityTester:
     else:
       ari_noise = adjusted_rand_score(labels_ref, labels_noisy)
 
-    if self.use_subsample_for_silhouette:
-      sample_idx = rng.choice(len(X), int(self.subsample_frac * len(X)), replace=False)
-      silhouette = silhouette_score(X[sample_idx], labels_ref[sample_idx]) if num_clusters > 1 else np.nan
-    else:
-      silhouette = silhouette_score(X, labels_ref) if num_clusters > 1 else np.nan
+    silhouette = silhouette_score(X, labels_ref) if num_clusters > 1 else np.nan
 
     return StabilityResult(ari_sub, ari_seed, ari_noise, silhouette)
 
