@@ -5,4 +5,11 @@ Text...
 volatility as a measure of unsafe driving \cite{arvin_how_2019, mohammadnazar_classifying_2021}
 
 
+The sequence of local regimes can be interpreted as a discrete-time process with Markov-like properties, where transition frequencies, dwell times, and volatility summarize the dynamics of the system. Similar approaches have been used in Markov chain analysis to characterize state sequences and transitions.
+
+
+Segment-based approaches to time-series clustering have been widely studied. For example, Guijo-Rubio et al. \cite{guijo-rubio_time-series_2021} propose a hierarchical method that first clusters segment typologies before deriving series-level features, similar in spirit to our aggregation of local regime windows. Feature-based clustering of derived descriptors, often combined with dimensionality reduction, is recognized as a standard practice for capturing temporal dynamics beyond raw signals \cite{warren_liao_clustering_2005}.
+
+The temporal sequence of local regimes can be interpreted as a discrete-time process with Markov-like properties. Quantitative descriptors such as transition frequency, dwell time, and volatility proportion are analogous to metrics used in the analysis of finite Markov chains, including entropy rate, stationary distribution, and first-passage statistics \cite{vegetabile_estimating_2019}. These metrics provide principled measures of dynamic complexity and regime evolution without requiring explicit probabilistic modeling.
+
 Grid search is a comprehensive hyperparameter tuning technique that systematically explores a predefined parameter space to identify the optimal configuration for a machine learning pipeline. In this specific implementation, the grid search is designed to optimize a clustering pipeline by exhaustively evaluating different combinations of feature selection, dimensionality reduction, and clustering parameters.
