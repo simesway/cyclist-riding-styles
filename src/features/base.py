@@ -131,6 +131,8 @@ class OvertakingFeatures:
   duration_pull_out: float
   duration_merge_back: float
 
+  overtake_length: float
+
   distance_start: float
   distance_cross: float
   distance_end: float
@@ -143,6 +145,7 @@ class OvertakingFeatures:
   speed_mean: float
   speed_max: float
   speed_std: float
+  speed_gain: float
 
   leader_speed_mean: float
   leader_speed_std: float
@@ -156,7 +159,14 @@ class OvertakingFeatures:
   long_acc_max: float
   long_acc_std: float
 
+  rel_acc_max: float
+  rel_acc_std: float
+
+  rel_speed_min: float
   rel_speed_mean: float
+  rel_speed_max: float
+  rel_speed_std: float
+
   rel_speed_start: float
   rel_speed_cross: float
   rel_speed_end: float
@@ -164,14 +174,39 @@ class OvertakingFeatures:
 
 @dataclass
 class FollowingFeatures:
-  long_distance_min: float
-  long_distance_mean: float
+  gap_min: float
+  gap_mean: float
+  gap_std: float
+
   lateral_offset_mean: float
+  lateral_offset_std: float
+
   thw_mean: float
   thw_min: float
-  follower_speed_mean: float
+
+  speed_std: float
+  speed_max: float
+  speed_mean: float
+  speed_gain: float
+
+  speed_corr: float
+  braking_fraction: float
+  response_delay: float
+
   leader_speed_mean: float
-  speed_diff_mean: float
+
+  acc_min: float
+  acc_mean: float
+  acc_max: float
+
+  rel_acc_min: float
+  rel_acc_max: float
+  rel_acc_std: float
+
+  rel_speed_min: float
+  rel_speed_mean: float
+  rel_speed_max: float
+  rel_speed_std: float
   rel_heading_std: float
 
 

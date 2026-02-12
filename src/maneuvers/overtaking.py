@@ -150,21 +150,27 @@ def detect_overtaking(
       distance_check = np.all(np.abs(lat[start_idx:z-1]) < max_lateral_distance)
       length_check = z - start_idx > min_frames
       monotony = np.all(long[start_idx:z-1] > 0)
+      distance_travelled_start = np.hypot(long[z] - long[start_idx], lat[z] - lat[start_idx])
       sanity_check = distance_check and length_check and monotony
       if not sanity_check:
         start_idx = None
       else:
         start_idx = max(start_idx, 0)
+    else:
+      distance_travelled_start = 0
 
     if end_idx is not None:
       distance_check = np.all(np.abs(lat[z+1:end_idx]) < max_lateral_distance)
       monotony = np.all(long[z+1:end_idx] < 0)
       length_check = end_idx - z > min_frames
+      distance_travelled_end = np.hypot(long[end_idx] - long[z], lat[end_idx] - lat[z])
       sanity_check = distance_check and length_check and monotony
       if not sanity_check:
         end_idx = None
       else:
         end_idx = min(end_idx, len(ts) - 1)
+    else:
+      distance_travelled_end = 0
 
     if start_idx is None and end_idx is None:
       continue
@@ -176,6 +182,9 @@ def detect_overtaking(
     distance = np.sqrt(long**2 + lat**2)
 
     f_min, f_max = start_idx or z, end_idx or z
+
+    rel_v = v_f[f_min:f_max+1] - v_l[f_min:f_max+1]
+    rel_acc = acc_f[f_min:f_max+1] - acc_l[f_min:f_max+1]
     candidates.append(
       OvertakingManeuver(
         ego_id=int(f), other_id=int(l),
@@ -187,6 +196,8 @@ def detect_overtaking(
           left_side=bool(lat[z] > 0),
           duration_pull_out=float(t_z - t_start) if t_start is not None else None,
           duration_merge_back=float(t_end - t_z) if t_end is not None else None,
+
+          overtake_length=float(distance_travelled_start + distance_travelled_end),
 
           distance_start=float(distance[f_min]),
           distance_cross=float(distance[z]),
@@ -200,6 +211,7 @@ def detect_overtaking(
           speed_mean=float(np.mean(v_f[f_min:f_max+1])),
           speed_max=float(np.max(v_f[f_min:f_max+1])),
           speed_std=float(np.std(v_f[f_min:f_max+1])),
+          speed_gain=float(v_f[f_max] - v_f[f_min]),
 
           leader_speed_mean=float(np.mean(v_l[f_min:f_max+1])),
           leader_speed_std=float(np.std(v_l[f_min:f_max+1])),
@@ -213,10 +225,17 @@ def detect_overtaking(
           long_acc_max=float(np.max(long_acc[f_min:f_max+1])),
           long_acc_std=float(np.std(long_acc[f_min:f_max+1])),
 
-          rel_speed_mean=float(np.mean(np.abs(v_f[f_min:f_max+1] - v_l[f_min:f_max+1]))),
-          rel_speed_start=float(np.abs(v_f[f_min] - v_l[f_min])),
-          rel_speed_cross=float(np.abs(v_f[z] - v_l[z])),
-          rel_speed_end=float(np.abs(v_f[f_max] - v_l[f_max]))
+          rel_acc_max=float(np.max(rel_acc)),
+          rel_acc_std=float(np.std(rel_acc)),
+
+          rel_speed_min=float(np.min(rel_v)),
+          rel_speed_max=float(np.max(rel_v)),
+          rel_speed_std=float(np.std(rel_v)),
+
+          rel_speed_mean=float(np.mean(np.abs(rel_v))),
+          rel_speed_start=float(np.abs(rel_v[0])),
+          rel_speed_cross=float(np.abs(rel_v[z-f_min])),
+          rel_speed_end=float(np.abs(rel_v[-1]))
         )
       )
     )

@@ -7,7 +7,8 @@ from data.smoothing import smooth
 from data.utils import clean_heading
 from features.base import FollowingFeatures
 from features.safety_metrics import time_headway
-from features.vehicle_dynamics import longitudinal_velocity, speed
+from features.traffic import speed_corr, response_delay
+from features.vehicle_dynamics import longitudinal_velocity, speed, count_brake_events, longitudinal_acceleration
 from maneuvers.base import FollowingManeuver
 from maneuvers.utils import get_lateral_longitudinal, detect_sign_flips
 
@@ -98,11 +99,15 @@ def detect_following(
       long, lat = a_long_smooth[s:e], a_lat_smooth[s:e]
       v_l, v_f = v_b[s:e], v_a[s:e]
       thw = thw_a[s:e]
+      v_corr = speed_corr(v_long_a[s:e], v_long_b[s:e])
+      long_acc_f, long_acc_l = longitudinal_acceleration(a)[s:e], longitudinal_acceleration(b)[s:e]
     else:
       l, f = a_idx, b_idx
       long, lat = b_long_smooth[s:e], b_lat_smooth[s:e]
       v_l, v_f = v_a[s:e], v_b[s:e]
       thw = thw_b[s:e]
+      v_corr = speed_corr(v_long_b[s:e], v_long_a[s:e])
+      long_acc_f, long_acc_l = longitudinal_acceleration(b)[s:e], longitudinal_acceleration(a)[s:e]
 
     lat_offset_ok = np.abs(lat) < max_lateral_distance
     spatial_headway_ok = (min_long_distance < np.abs(long)) & (np.abs(long) < max_long_distance)
@@ -125,19 +130,47 @@ def detect_following(
       local_thw = thw[start:end]
       local_lat = lat[start:end]
       local_long = long[start:end]
+      v_rel = v_f[start:end] - v_l[start:end]
+      rel_acc = long_acc_f[start:end] - long_acc_l[start:end]
       maneuvers.append(
         FollowingManeuver(
           ego_id=int(f), other_id=int(l),
           t_start=t0, t_end=t1, duration=t1-t0,
           features=FollowingFeatures(
-            long_distance_min=float(np.min(local_long)),
-            long_distance_mean=float(np.mean(local_long)),
+            gap_min=float(np.min(local_long)),
+            gap_mean=float(np.mean(local_long)),
+            gap_std=float(np.std(local_long)),
+
             lateral_offset_mean=float(np.mean(np.abs(local_lat))),
+            lateral_offset_std=float(np.std(local_lat)),
+
             thw_min=float(np.min(local_thw)),
             thw_mean=float(np.mean(np.abs(local_thw))),
-            follower_speed_mean=float(np.mean(v_f[start:end])),
+
+            speed_std=float(np.std(v_f[start:end])),
+            speed_max=float(np.max(v_f[start:end])),
+            speed_mean=float(np.mean(v_f[start:end])),
+            speed_gain=float(v_f[end-1] - v_f[start]),
+
+            speed_corr=float(v_corr),
+            braking_fraction=float(count_brake_events(long_acc_f[start:end], 4, -1.25)/t1-t0),
+            response_delay=float(response_delay(long_acc_f[start:end], long_acc_l[start:end], max_delay=5.0, dt=0.08)),
+
             leader_speed_mean=float(np.mean(v_l[start:end])),
-            speed_diff_mean=float(np.mean(np.abs(v_f[start:end] - v_l[start:end]))),
+
+            acc_min=float(np.min(long_acc_f[start:end])),
+            acc_mean=float(np.mean(long_acc_f[start:end])),
+            acc_max=float(np.max(long_acc_f[start:end])),
+
+            rel_acc_min=float(np.min(rel_acc)),
+            rel_acc_max=float(np.max(rel_acc)),
+            rel_acc_std=float(np.std(rel_acc)),
+
+            rel_speed_min=float(np.min(v_rel)),
+            rel_speed_mean=float(np.mean(v_rel)),
+            rel_speed_max=float(np.max(v_rel)),
+            rel_speed_std=float(np.std(v_rel)),
+
             rel_heading_std=float(np.std(rel_heading[s + start:s + end]))
           )
         )
