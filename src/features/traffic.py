@@ -4,6 +4,36 @@ import numpy as np
 import pandas as pd
 
 
+def speed_corr(v_ego, v_leader) -> float:
+  mask = np.isfinite(v_ego) & np.isfinite(v_leader)
+  if mask.sum() < 2:
+    return 0.0
+  return np.corrcoef(v_ego[mask], v_leader[mask])[0, 1]
+
+
+def response_delay(acc_ego, acc_leader, max_delay=5.0, dt=0.08) -> float:
+  """
+  Estimate response delay as the time lag that maximizes cross-correlation
+  between ego and leader acceleration.
+  """
+  a_l = acc_leader - np.mean(acc_leader)
+  a_e = acc_ego - np.mean(acc_ego)
+
+  corr = np.correlate(a_e, a_l, mode="full")
+  lags = np.arange(-len(acc_ego) + 1, len(acc_ego))
+
+  lag_times = lags * dt
+
+  mask = (lag_times >= 0) & (lag_times <= max_delay)
+
+  if not np.any(mask):
+    return 0.0
+
+  best_lag = lags[mask][np.argmax(corr[mask])]
+
+  return best_lag * dt
+
+
 def counts_within_radius(df: pd.DataFrame, category_id: int, radius, min_velocity=0.0):
   """
   Compute counts per timestamp for a given category, within a radius,
