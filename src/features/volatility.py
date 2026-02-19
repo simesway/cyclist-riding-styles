@@ -12,12 +12,12 @@ def mad(x: np.ndarray) -> float:
 
 
 def std(x: np.ndarray) -> float:
-  return float(np.std(x, ddof=0))
+  return float(np.std(x, ddof=1))
 
 
 def cv(x: np.ndarray) -> float:
   m = np.mean(x)
-  return float(np.std(x) / m) if m != 0 else np.nan
+  return float(np.std(x, ddof=1) / m) if m != 0 else np.nan
 
 
 def qcv(x: np.ndarray) -> float:
