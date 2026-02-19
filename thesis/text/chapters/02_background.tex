@@ -1,15 +1,91 @@
-\chapter{Background \& Related Works}
-Text... 
+\chapter{Related Works}
+
+\section{Trajectory-Based Behavior Modeling in Traffic Research / Driving Style Identification}
+\iffalse
+Purpose: Show how maneuvers and trajectories are usually analyzed.
+
+Discuss: Direct trajectory clustering, Driving style clustering, Cyclist behavior studies, Window-based feature extraction
+
+Key contrast: Most approaches treat maneuvers as single homogeneous units or stop at window-level clustering.
+
+Transition: Limited work performs hierarchical abstraction from local behavioral regimes to maneuver-level style representations.
+
+traffic-studies: Orozco-Fontalvo
+papers: kutsch, bachir , Belikhov, de zepeda, dias et al, milardo, Mobini Seraji, taubman
+following: dias et al, kutsch, bachir, hoogendorm, zhang 2025 (cars), zhao 2017, 
+overtaking, kutsch, Munnamgi, khan, mosacri (cars), mohammed 2019, rasch (cars), wang 2022, yin 2022
+
+two approaches: car-following models, bicycle-following models 
+closest
+
+\fi
+
+%%% section 1: riding style identification
+
+\citeauthor{kutsch_analyzing_2025} (\citeyear{kutsch_analyzing_2025}) analyzed cyclist trajectories in urban intersections using the TUM-DOT MUC drone dataset. They identified following and overtaking maneuvers and characterized micro-level riding behavior using metrics such as speed, spacing, and headways. This work provides a high-resolution empirical foundation for trajectory- and maneuver-based analysis. Building on their dataset and maneuver definitions, the present study develops a modular, multi-stage clustering pipeline to identify latent riding styles across maneuvers, enabling hierarchical abstraction from local behavioral regimes to maneuver-level styles.
+
+Several studies have focused on empirical analyses of cycling and driving behavior using trajectory or instrumented vehicle data. \citeauthor{belikhov_exploring_2025} (\citeyear{belikhov_exploring_2025}) analyzed free-flow cycling with instrumented bicycles in semi-controlled experiments, examining environmental and individual factors such as topography, wind, and trip characteristics. \citeauthor{dias_exploring_2023} (\citeyear{dias_exploring_2023}) investigated single-file cyclist trajectories, computing microscopic reaction delays and their dependence on spacing and relative speed. These studies provide detailed measurements of cyclist behavior in urban or controlled contexts and contribute quantitative insights into microscopic riding dynamics.
+
+Other work has explored behavioral state and interaction modeling from trajectories. \citeauthor{mohammed_characterization_2019} (\citeyear{mohammed_characterization_2019}) applied multivariate finite mixture models to cyclist interactions, identifying following and overtaking states and quantifying transition patterns for microsimulation. \citeauthor{de_zepeda_dynamic_2021} (\citeyear{de_zepeda_dynamic_2021}) introduced dynamic clustering of vehicle trajectories to capture style switches over time. \citeauthor{zhang_shareable_2024} (\citeyear{zhang_shareable_2024}) proposed a hierarchical latent model to represent sequential driving behavior as fragments in low-dimensional space, extracting individual and shared driving styles in an unsupervised manner. Collectively, these studies demonstrate methods for segmenting, clustering, and representing behavioral states from trajectory data.
+
+In addition to trajectory-based and behavioral state modeling, several studies have explored automated learning approaches for behavior recognition. Techniques such as clustering and classification frameworks have been applied to driving and cycling data to identify behavioral patterns and styles \cite{mobini_seraji_state---art_2025}. Other work has implemented AutoML pipelines for unsupervised feature extraction and behavior recognition, achieving high-accuracy classification on vehicle datasets \cite{milardo_data-driven_2022}. Deep learning approaches have also been combined with predictive modeling to link identified behavioral styles with maneuver-level outcomes, for example in lane-change risk assessment \cite{zhang_proactive_2023}. Collectively, these studies illustrate the growing application of automated and data-driven techniques for extracting patterns from large-scale trajectory data, complementing the more classical and interpretable approaches in cyclist and driving behavior research.
+
+%%% section 2: overtaking / following
+
+Several studies have examined following interactions among cyclists using trajectory data. \citeauthor{kutsch_analyzing_2025} (\citeyear{kutsch_analyzing_2025}) collected drone-based trajectories in urban environments and analyzed acceleration, speed, spacing, and headways for following and free-flow riding. Their work provides detailed empirical measurements of cyclist interactions, capturing heterogeneity over time, but remains descriptive without automated classification or predictive modeling of interactions. \citeauthor{dias_exploring_2023} (\citeyear{dias_exploring_2023}) conducted controlled experiments with single-file cyclists, quantifying reaction delays through correlation of acceleration and relative speed, highlighting the influence of spacing on following behavior. Similarly, \citeauthor{hoogendoorn_bicycle_2016} introduced a composite headway model to separate minimum and free headway distributions, capturing stochastic heterogeneity in following behavior. Complementary modeling efforts, such as \citeauthor{zhao_unified_2017} (\citeyear{zhao_unified_2017}) and \citeauthor{zhang_shareable_2024} (\citeyear{zhang_shareable_2024}), propose flow-based or AI-driven microscopic interaction models, providing a theoretical framework for follow-the-leader dynamics across traffic modes. Collectively, these studies establish descriptive and modeling baselines for following maneuvers, but primarily focus on descriptive statistics or parametric interaction models at a single analytical level, without hierarchical abstraction of local behavioral regimes into higher-level maneuver representations.
+
+Overtaking behavior has been studied through both empirical measurements and algorithmic detection. \citeauthor{kutsch_analyzing_2025} (\citeyear{kutsch_analyzing_2025}) analyzed overtaking events in drone-collected trajectories, providing descriptive statistics on speed, lateral spacing, and maneuver duration. \citeauthor*{khan_characteristics_2001} (\citeyear{khan_characteristics_2001}) extended this approach with high-frequency tracking on constrained paths, quantifying passing dynamics and speed differences.
+\citeauthor{mocsari_analysis_2009} (\citeyear{mocsari_analysis_2009}) collected qualitative observations on overtaking maneuvers to inform traffic microsimulation. 
+Algorithmic approaches include \citeauthor{feng_automatic_2023} (\citeyear{feng_automatic_2023}), who proposed a multi-phase detection method for overtaking events using drone video data, and \citeauthor{wang_investigating_2022} (\citeyear{wang_investigating_2022}), who applied random parameter logit models to identify determinants of overtaking decisions.
+While these studies provide descriptive, detection, or predictive capabilities, few integrate local behavioral states into maneuver-level style representations.
+
+Approaches that identify latent behavioral states provide a conceptual bridge from descriptive statistics to unsupervised style analysis. 
+\citeauthor{mohammed_characterization_2019} (\citeyear{mohammed_characterization_2019})applied Gaussian Finite Mixture Models to classify cyclist following and overtaking interactions into distinct motion states based on longitudinal distance, lateral distance, and speed differences. The approach relies on model-based clustering with covariance structure selection via Bayesian Information Criterion (BIC), assuming independent and identically distributed observations. While this probabilistic framework enables flexible state identification, the analysis remains limited to maneuver-specific state classification and descriptive interpretation. No hierarchical aggregation of states into higher-level maneuver styles is performed, and temporal dependencies are not explicitly modeled. The study thus exemplifies parametric state discovery at a single analytical level rather than multi-stage behavioral abstraction.
+Extending this concept, \citeauthor{bachir_identifying_2025} (\citeyear{bachir_identifying_2025}) proposed a two-level unsupervised clustering framework to characterize cyclist riding styles under free-flow conditions. At the first level, timestamp-based riding volatility measures derived from speed, acceleration, and rotational fluctuations were clustered using PCA and k-means to identify local behavioral regimes. At the second level, trajectory-level style representations were constructed by aggregating proportions of level-1 states, transition rates, entropy measures, and contextual features such as infrastructure exposure. These aggregated descriptors were subsequently reclustered to identify rider-level styles. While this approach demonstrates the potential of multi-level unsupervised clustering for behavioral characterization and incorporates stability considerations via silhouette and ARI evaluation, it is not maneuver-specific and does not explicitly frame the process as hierarchical abstraction within complex traffic interactions. Extending this concept toward maneuver-level regime aggregation and style discovery forms a central methodological motivation of the present study.
+
+\section{Behavioral State Segmentation and Regime Discovery}
+Cycling behavior, like driving, unfolds continuously but can be meaningfully described through short-term, discrete behavioral units. Conceptual models of human action, such as those proposed by \citeauthor{pentland_modeling_1999} in \citetitle{pentland_modeling_1999}, suggest that sequences of micro-level states carry predictive information and reveal underlying structure, even without assuming specific probabilistic generative mechanisms. 
+
+Trajectory segmentation for local behavioral state generation has been performed using event-based approaches, such as acceleration and braking \cite{yarlagadda_exploring_2022} or including cruising \cite{khattak_analysis_2017}, as well as sliding windows \cite{bachir_identifying_2025, li_volatility-based_2025} and dynamic, context-aware windows determined by road alignment and maneuver content \cite{li_volatility-based_2025}. Within each window, volatility features capture critical aspects of behavior. Volatility, short-term variations in speed, acceleration, or rotation, have been linked to safety-relevant events \cite{arvin_how_2019}, intersection performance \cite{mohammadnazar_classifying_2021}, and interpretable driving styles ranging from calm to aggressive \cite{yarlagadda_exploring_2022, wang_review_2021}. Accordingly, the present work extracts volatility measures within each window to define local riding regimes, ensuring that clusters reflect meaningful micro-behavioral variation rather than absolute magnitudes and providing a principled basis for subsequent aggregation and maneuver-level analysis.
+
+Building on these findings, behavioral regimes can be conceptualized as primarily arising from intrinsic motion dynamics, such as speed, acceleration, and rotation. While environmental context—including the presence of other traffic participants or infrastructure layout can influence behavior \cite{gindele_probabilistic_2010, sharif_context-awareness_2017, he_multi-scenario_2025}, the identification of local regimes in this work is performed independently of such situational factors. Contextual variables are instead analyzed post hoc to interpret observed behavioral patterns, providing descriptive insight into how maneuvers manifest under varying traffic and infrastructural conditions without affecting the unsupervised abstraction of micro-level states.
+
+Although probabilistic frameworks such as Markov Chains or Hidden Markov models have been used to model sequences of behavioral states \cite{khattak_analysis_2017, yin_extracting_2022, he_multi-scenario_2025} and personal driving styles \cite{meng_human_2006,zou_multivariate_2022}], the conceptual value lies in the recognition that sequences of discrete regimes encode structure: transition rates, dwell times, and entropy measures provide principled descriptors of behavioral complexity without requiring explicit generative assumptions \cite{vegetabile_estimating_2019}. In this sense, a maneuver can be understood as an ordered composition of behavioral regimes, whose statistical properties summarize internal variability and execution patterns. Post hoc analysis of environmental context further allows interpretation of how these behaviors manifest under different traffic or infrastructure conditions, enhancing insight without constraining the abstraction process itself.
+
+Taken together, this body of work motivates a modular, assumption-light abstraction of cyclist behavior: local behavioral regimes capture micro-level dynamics, their composition and distribution convey structural information about maneuvers, and contextual features provide descriptive interpretability. Conceptually, this approach aligns with prior research on driving style and behavior modeling while extending it to multi-stage, maneuver-level abstraction, providing a principled foundation for hierarchical behavioral analysis.
 
 
-volatility as a measure of unsafe driving \cite{arvin_how_2019, mohammadnazar_classifying_2021}
+
+\section{Multi-Stage and Hierarchical Clustering Frameworks}
+\iffalse
+Discuss: Two-stage clustering, Hierarchical abstraction, Modular pipelines, Representation → clustering separation
+
+Key argument: Existing approaches either perform hierarchical clustering within a single algorithmic framework or rely on end-to-end learning. Modular multi-stage clustering with explicit intermediate representation aggregation is less studied.
+
+papers: nielsen, scheiner, ren 2017, lai, nakashima
+
+\fi
+
+Multi-stage clustering frameworks provide a structured approach to uncovering patterns in complex datasets by separating the analysis into modular steps. Rather than applying a single clustering algorithm directly to the raw data, these approaches first identify local or intermediate patterns, transform or aggregate them into higher-level representations, and then perform subsequent clustering to extract global structure. This strategy is particularly beneficial for data with heterogeneous, sequential, or high-dimensional characteristics, as it improves interpretability, enables stage-wise optimization, and allows flexible adaptation to different problem domains \cite{nielsen_hierarchical_2016, scheiner_multi-stage_2019}.
+
+Applications of multi-stage clustering can be found across a variety of fields, including time series analysis, sensor data processing, and behavioral modeling. For example, approaches in temporal data segment time series into sliding windows, perform initial clustering within each segment, and then aggregate the results to derive global clusters \cite{ren_sliding_2017, nakashima_performance_2016, lai_novel_2010, guijo-rubio_time-series_2021}. Across these studies, the core principle remains consistent: first-stage clustering captures fine-grained, local patterns, while second-stage clustering abstracts these into higher-level structures, allowing both local variation and global patterns to be represented.
+
+In the present study, this multi-stage paradigm is applied to cyclist trajectory data. First, short temporal windows are clustered to identify local riding regimes, which capture micro-level variations in speed, acceleration, and rotational behavior. These local regimes are then aggregated into maneuver-level descriptors, which summarize the internal structure of each maneuver. A second-stage clustering of these descriptors produces latent maneuver styles, providing hierarchical abstraction from local behavior to maneuver-level patterns. This design leverages the interpretability and modularity of multi-stage clustering while adapting it specifically to trajectory-based behavior analysis.
 
 
-The sequence of local regimes can be interpreted as a discrete-time process with Markov-like properties, where transition frequencies, dwell times, and volatility summarize the dynamics of the system. Similar approaches have been used in Markov chain analysis to characterize state sequences and transitions.
+\section{Unsupervised Model Selection and Stability}
+\iffalse
+Discuss: Sensitivity of clustering to initialization, Silhouette limitations, Stability-based validation, 
 
+Transition: These considerations motivate the stability-oriented model selection strategy adopted in this thesis.
 
-Segment-based approaches to time-series clustering have been widely studied. For example, Guijo-Rubio et al. \cite{guijo-rubio_time-series_2021} propose a hierarchical method that first clusters segment typologies before deriving series-level features, similar in spirit to our aggregation of local regime windows. Feature-based clustering of derived descriptors, often combined with dimensionality reduction, is recognized as a standard practice for capturing temporal dynamics beyond raw signals \cite{warren_liao_clustering_2005}.
-
-The temporal sequence of local regimes can be interpreted as a discrete-time process with Markov-like properties. Quantitative descriptors such as transition frequency, dwell time, and volatility proportion are analogous to metrics used in the analysis of finite Markov chains, including entropy rate, stationary distribution, and first-passage statistics \cite{vegetabile_estimating_2019}. These metrics provide principled measures of dynamic complexity and regime evolution without requiring explicit probabilistic modeling.
+papers: chen et al, coates and ng, 
+\fi
 
 Grid search is a comprehensive hyperparameter tuning technique that systematically explores a predefined parameter space to identify the optimal configuration for a machine learning pipeline. In this specific implementation, the grid search is designed to optimize a clustering pipeline by exhaustively evaluating different combinations of feature selection, dimensionality reduction, and clustering parameters.
+
+
+
+
+Existing work either clusters full trajectories directly, identifies local behavioral regimes without higher-level abstraction, or relies on integrated end-to-end frameworks. A modular, interpretable, multi-stage clustering approach that first extracts local behavioral regimes and subsequently derives maneuver-level style representations remains insufficiently explored. This motivates the hierarchical framework proposed in the following chapter.
+While these approaches demonstrate the effectiveness of unsupervised maneuver-level behavior analysis, existing methods either emphasize direct time-series clustering or do not explicitly separate local regime discovery from higher-level maneuver abstraction. A modular, stability-oriented multi-stage clustering framework that transforms local behavioral regimes into aggregated maneuver style representations remains insufficiently explored. This motivates the hierarchical pipeline introduced in the following chapter.
