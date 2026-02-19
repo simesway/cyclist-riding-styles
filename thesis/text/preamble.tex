@@ -8,10 +8,27 @@
 \usepackage{fancyhdr}
 
 \usepackage{booktabs}
+\usepackage{color}
+\usepackage{tabularray}
 
 \pagestyle{fancy}
 
-\usepackage[style=ieee,url=false,sorting=nyt]{biblatex}
+\usepackage[
+	style=ieee,
+	maxcitenames=2,
+	mincitenames=1,
+	maxbibnames=6,
+	minbibnames=1,
+	url=false,
+	doi=false,
+	date=year,
+	sorting=nyt%none
+]{biblatex}
+
+\AtEveryBibitem{
+	\clearlist{language}
+	\clearfield{issn}
+}
 
 
 \addbibresource{references.bib}
