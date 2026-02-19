@@ -41,7 +41,8 @@ All interaction candidates were additionally filtered by the three selection cri
 	\item Heading Criterion: was used inside maneuver detection code
 \end{enumerate} 
 
-Additionally a constraint was set to exclude non-moving objects, by only keeping timestamps where the velocity of an object is above the average human walking speed of 1.4-1.48 m/s² \cite{bartels_bewegungsverhalten_2014}.
+As often done in driving behavior analysis, moments of zero speeds were filtered out \cite{mohammadnazar_classifying_2021, li_volatility-based_2025}.
+Extending this a constraint was set to exclude non-moving objects, by only keeping timestamps where the velocity of an object is above the average human walking speed of 1.4-1.48 m/s² \cite{bartels_bewegungsverhalten_2014}, to avoid including false maneuvers, e.g. occurring during queueing before an intersection.
 
 For each interaction, both trajectories were synchronized by timestamp and the lateral and longitudinal distances are computed relative to a chosen vehicle's frame of reference:
 $$formula?$$
@@ -82,7 +83,8 @@ For validated candidates, the module extracts descriptive features \cite{khan_ch
 
 For the following stages of the analysis, the maneuvers were seperated. First the maneuvers were segmented using the sliding window approach, resulting in fixed-length temporal windows of 1s duration with 50\% overlap \cite{li_volatility-based_2025, mohammadnazar_classifying_2021}, a common approach for modeling short-term driving and riding dynamics while preserving temporal continuity. For each window three sets of features are extracted and aggregated, each used by a different stage of the analysis and separated cleanly to ensure domain separation. The feature sets are Riding/Volatility, Traffic and Infrastructure descriptive features. 
 
-Since riding in and around intersections differ in dynamics from riding in straight street segments, the windows were split in two groups depending on the distance to a traffic light (easier to obtain than center of intersection). Visualization indicated this correlation but it is also backed by literature \cite{li_volatility-based_2025}. The intersection- and non-intersection-windows were clustered seperately. The Maneuver-level local regime aggregation is performed over all windows (intersection and non-intersection).
+
+Since riding in and around intersections differ in dynamics from riding in straight street segments, the windows were split in two groups depending on the distance to a traffic light (easier to obtain than center of intersection). The intersection- and non-intersection-windows were clustered seperately. The Maneuver-level local regime aggregation is performed over all windows (intersection and non-intersection).
 
 The same clustering pipeline was used for clustering windows into local riding regimes and maneuvers into modes. (this might be an analysis how this framework performs on maneuvers)
 
@@ -132,6 +134,38 @@ Within each window, magnitude- \cite{enev_automobile_2016} and volatility-based 
 Magnitude features describe the intensity of motion and include speed, longitudinal acceleration, and yaw rate. For each of these signals, minimum and maximum values within the window are computed.
 
 Volatility features capture short-term variability and dynamic fluctuations. They are derived from speed, longitudinal and lateral acceleration, and rotational fluctuations. For each signal, the mean, mean absolute deviation, coefficient of variation, and quartile coefficient of variation are calculated.
+
+
+
+% \usepackage{color}
+% \usepackage{tabularray}
+\definecolor{Silver}{rgb}{0.752,0.752,0.752}
+\begin{table}
+	\centering
+	\caption{Your table caption here}
+	\label{tab:mag-vol}
+	\begin{tblr}{
+			row{1} = {font=\bfseries},
+			column{even} = {c},
+			column{3} = {c},
+			hlines = {Silver},
+			hline{1,12} = {-}{0.08em,black},
+			hline{2} = {-}{black},
+		}
+		Measure                           & Category & Definition                                          \\
+		Mean                              & Mag      & $\mu = \frac{1}{n}\sum_{i=1}^n x_i$                 \\
+		Minimum                           & Mag      & min $ = \min(x_i)$                                   \\
+		Maximum                           & Mag      & max $ = \max(x_i)$                                   \\
+		Maximum Absolute                  & Mag      & max $_{abs} = \max(|x_i|)$                                       \\
+		90th Percentile                   & Mag      & $P_{90} = P_{90}(x)$                                         \\
+		90th Percentile (abs)             & Mag      & $P_{90,abs} = P_{90}(|x|)$                                       \\
+		Sample Standard Deviation         & Vol      & $s = \sqrt{\frac{1}{n-1}\sum_{i=1}^{n}(x_i-\bar{x})^2}$ \\
+		Sample Mean Absolute Deviation    & Vol      & MAD $ = \frac{1}{n}\sum_i=1^n|x_i-\bar{x}|$                \\
+		Coefficient of Variation          & Vol      & CV $ = \frac{s}{\bar{x}}$                                 \\
+		Quartile Coefficient of Variation & Vol      & QCV $ = \frac{Q_3 - Q_1}{|Q_3| + |Q_1|}$                   
+	\end{tblr}
+\end{table}
+
 
 All features are standardized, and magnitude and volatility features are weighted equally. Feature relevance is assessed using feature selection techniques and principal component analysis. The resulting window-level feature vectors are clustered separately per maneuver type. 
 
