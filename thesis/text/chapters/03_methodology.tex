@@ -118,7 +118,7 @@ Clustering quality was assessed separately using the silhouette score, computed 
 \subsection{Grid Search}
 A grid search was conducted over feature-selection thresholds (correlation and variance inflation factor), PCA dimensionality, and the number of clusters to identify configurations that yield both interpretable and stable cluster structures.
 
-For each hyperparameter combination, features were selected, dimensionality was reduced using PCA, and KMeans clustering was applied. Clustering stability was assessed over multiple runs using repeated subsampling and perturbations. Specifically, clustering was repeated n times on an 80\% stratified subsample of the data, and stability was quantified using the Adjusted Rand Index (ARI) under three conditions: variation due to subsampling, random noise, and random initialization.
+For each hyperparameter combination, features were selected, dimensionality was reduced using PCA, and KMeans clustering was applied. Clustering stability was assessed over multiple runs using repeated subsampling and perturbations. Specifically, clustering was repeated n times on an 80\% stratified subsample of the data, and stability was quantified using the Adjusted Rand Index (ARI) under three conditions: variation due to subsampling, random noise, and random initialization. It was used as a robustness indicator rather than a strict selection criterion \cite{ben-david_sober_2006}, with interpretability guiding the final choice of clusters.
 
 Clustering quality was evaluated using the silhouette score computed on a subsample to reduce bias, while cluster balance was enforced by tracking the minimum relative cluster size across runs. For each metric, median values and variability were reported to obtain robust estimates and reduce sensitivity to outliers. This procedure allows selecting hyperparameters that balance clustering quality, stability, and cluster size constraints while mitigating overfitting. Using medians over repeated runs reduces the influence of stochastic variation inherent to KMeans and subsampling. 
 
@@ -147,7 +147,7 @@ Volatility features capture short-term variability and dynamic fluctuations. The
 	\begin{tblr}{
 			row{1} = {font=\bfseries},
 			column{even} = {c},
-			column{3} = {c},
+			column{3} = {l},
 			hlines = {Silver},
 			hline{1,12} = {-}{0.08em,black},
 			hline{2} = {-}{black},
@@ -160,7 +160,7 @@ Volatility features capture short-term variability and dynamic fluctuations. The
 		90th Percentile                   & Mag      & $P_{90} = P_{90}(x)$                                         \\
 		90th Percentile (abs)             & Mag      & $P_{90,abs} = P_{90}(|x|)$                                       \\
 		Sample Standard Deviation         & Vol      & $s = \sqrt{\frac{1}{n-1}\sum_{i=1}^{n}(x_i-\bar{x})^2}$ \\
-		Sample Mean Absolute Deviation    & Vol      & MAD $ = \frac{1}{n}\sum_i=1^n|x_i-\bar{x}|$                \\
+		Sample Mean Absolute Deviation    & Vol      & MAD $ = \frac{1}{n}\sum_{i=1}^n|x_i-\bar{x}|$                \\
 		Coefficient of Variation          & Vol      & CV $ = \frac{s}{\bar{x}}$                                 \\
 		Quartile Coefficient of Variation & Vol      & QCV $ = \frac{Q_3 - Q_1}{|Q_3| + |Q_1|}$                   
 	\end{tblr}
@@ -175,7 +175,52 @@ Each sliding window is then assigned a local riding regime corresponding to its 
 
 \subsection*{Level 2: Maneuver-Level Representation}
 
-\subsubsection*{Regime Dynamics Characterization}
+\subsubsection*{Regime Dynamics Aggregation}
+
+Let $m$ be a maneuver, $t$ the window index within the maneuver, $s_t \in S = \{I, N\}$ scenario label of window $t$, for each scenario $s\in S$ clustering produces $k_s$ regimes, $r_t^{(s)} \in \{1, \ldots, k_s\}$ the regime label assigned within scenario $s$.
+The global regime label space is defined as
+$$\mathcal{R} = \bigcup_{s\in S} \{(s, 1), \ldots, (s,k_s)\}$$
+A regime is defined as a scenario-specific behavioral state.
+The global regime label space is the union of all scenario-specific regimes.
+Each window is therefore assigned a unique scenario-qualified regime:
+$$\tilde{r}_t = \left(s_t, r_t^{(s_t)}\right)$$
+This guarantees uniqueness even if $k_I \neq k_N$.
+
+For maneuver $m$, define total windows as $T_m$ and scenario-specific window counts $T_m^{(s)} = \sum_{t\in m}\mathbf{1} \left(s_t = s\right)$.
+Then scenario exposure is defined as:
+$$P_m(s) = \frac{T_m^{(s)}}{T_m}$$
+This explicitly captures how much of a maneuver occurred in each scenario.
+This is important to prevent hidden scenario-driven clustering.
+
+Let 
+$$\mathcal{R}_m = \left\{r\in\mathcal{R}|\text{at least one window of maneuver }m\text{ is assigned to }r\right\}$$
+For each scenario $s\in S$ that is actually present in $m$, define
+$$\mathcal{R}_m^{(s)} = \left\{r\in\{(s,1),\ldots,(s,k_s)\} | P_m(r|s)>0\right\}$$
+
+For a maneuver $m$ the regime exposure under given scenario $s$ and regime $r\in\mathcal{R}_m^{(s)}$ is defined as
+$$P_m\left(r|s\right) = \frac{1}{T_m^{(s)}} \sum_{t\in m}\mathbf{1}\left(s_t = s \wedge r_t^{(s)}=r\right)$$
+
+A run is defined as a contiguous sequence of windows assigned to the same scenario-qualified regime $\tilde{r}_t$ within a maneuver.
+For each regime, the mean run length captures the average duration of consecutive windows assigned to that regime, reflecting the persistence of the behavior. The standard deviation of run lengths quantifies variability in this persistence, highlighting whether a regime tends to appear in long uninterrupted sequences or in short, fragmented bursts.
+
+Let $p_i$ be the proportion of all windows in the maneuver assigned to regime $r_i\in\mathcal{R}$:
+$$p_i = \frac{\text{number of windows in regime }r_i}{\text{total number of windows in the maneuver}}$$
+
+Then the normalized global Shannon entropy is defined as
+$$H_\text{global}(m) = \frac{1}{\log_2|\mathcal{R}_m|} \cdot - \sum_{r\in\mathcal{R}_m} p_r \log_2 \left(p_r\right)$$
+
+Then the normalized scenario Shannon entropy is defined as
+$$H_s(m) = \frac{1}{\log_2|\mathcal{R}_m^{(s)}|} \cdot - \sum_{r\in\mathcal{R}_m^{(s)}} P_m\left(r|s\right) \log_2 P_m\left(r|s\right)$$
+
+For maneuvers with $|\mathcal{R}_m| = 1$, the global and scenario entropy are defined as 0.
+
+Maneuver clusters may reflect both internal regime composition and scenario exposure.
+Regime clustering was performed separately per scenario.
+To ensure methodological generality, regime labels were treated as scenario-qualified states, forming a unified regime label space defined as the union of scenario-specific clusters.
+Aggregation at maneuver level was performed over this extended regime set, allowing the framework to accommodate differing cluster counts or structural interpretations across scenarios without requiring manual alignment.
+
+
+\subsubsection*{Regime Dynamics Aggregation}
 To characterize the internal structure of each maneuver, an aggregation method was developed to transform the sequence of local regime assignments into quantitative descriptors of operational dynamics.
 (Distribution-based behavioral summarization.)
 By analyzing the temporal sequence of local regimes, features were extracted that capture the maneuver's behavioral complexity. The method quantifies regime dynamics through metrics that reveal the stability, transitions, and variability of the maneuver's internal operational states.
