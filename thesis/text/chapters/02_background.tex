@@ -22,7 +22,7 @@ closest
 
 %%% section 1: riding style identification
 
-\citeauthor{kutsch_analyzing_2025} (\citeyear{kutsch_analyzing_2025}) analyzed cyclist trajectories in urban intersections using the TUM-DOT MUC drone dataset. They identified following and overtaking maneuvers and characterized micro-level riding behavior using metrics such as speed, spacing, and headways. This work provides a high-resolution empirical foundation for trajectory- and maneuver-based analysis. Building on their dataset and maneuver definitions, the present study develops a modular, multi-stage clustering pipeline to identify latent riding styles across maneuvers, enabling hierarchical abstraction from local behavioral regimes to maneuver-level styles.
+\citeauthor{kutsch_analyzing_2025} (\citeyear{kutsch_analyzing_2025}) analyzed cyclist maneuvers in urban setting using the TUM-DOT MUC drone dataset. They identified following and overtaking maneuvers and characterized micro-level riding behavior using metrics such as speed, spacing, and headways. This work provides a high-resolution empirical foundation for trajectory- and maneuver-based analysis. Building on their dataset and maneuver definitions, the present study develops a modular, multi-stage clustering pipeline to identify latent riding styles across maneuvers, enabling hierarchical abstraction from local behavioral regimes to maneuver-level styles.
 
 Several studies have focused on empirical analyses of cycling and driving behavior using trajectory or instrumented vehicle data. \citeauthor{belikhov_exploring_2025} (\citeyear{belikhov_exploring_2025}) analyzed free-flow cycling with instrumented bicycles in semi-controlled experiments, examining environmental and individual factors such as topography, wind, and trip characteristics. \citeauthor{dias_exploring_2023} (\citeyear{dias_exploring_2023}) investigated single-file cyclist trajectories, computing microscopic reaction delays and their dependence on spacing and relative speed. These studies provide detailed measurements of cyclist behavior in urban or controlled contexts and contribute quantitative insights into microscopic riding dynamics.
 
@@ -61,11 +61,13 @@ However, scenario segmentation is critical for accurate volatility-based analysi
 % traffic
 While Volatility captures individual driving dynamics and behavioral risk, a broader set of surrogate safety measures is often deployed to capture the surrounding traffic and evaluate potential conflicts \cite{wang_review_2021}. These measures provide additional information about the operational and safety-relevant context of maneuvers, enabling a more comprehensive analysis of behavior under complex traffic conditions. Frequently used SSMs include Time-To-Collision (TTC), Deceleration-Rate-To-Avoid-Crash (DRAC), Distance-At-Closest-Approach (DCA) and proximity counts of other moving traffic participants.
 
-Incorporating these surrogate safety measures allows relating behavioral regimes and maneuver-execution modes to the surrounding traffic context, supporting interpretability and an exploratory analysis.
+Incorporating these surrogate safety measures allows relating behavioral regimes and maneuver-execution modes to the surrounding traffic context, supporting interpretability and exploratory analysis.
 %\cite{wang_review_2021, bahmankhah_interaction_2019, hu_high-resolution_2022, huang_predicting_2024, nabavi_niaki_is_2019}
-% infrastructure
 
-While traffic and infrastructure can influence behavior \cite{gindele_probabilistic_2010, sharif_context-awareness_2017, he_multi-scenario_2025}, the identification of local regimes in this work is performed independently of such situational factors. Contextual variables are instead analyzed post hoc to interpret observed behavioral patterns, providing descriptive insight into how maneuvers manifest under varying traffic and infrastructural conditions without affecting the unsupervised abstraction of micro-level states.
+% infrastructure
+Furthermore, cyclist behavior is strongly influenced by infrastructure. Empirical studies have shown substantial variability in riding behavior as a function of contextual factors such as topography, curvature, intersections, and wind conditions. For example \citeauthor{belikhov_exploring_2025} (\citeyear{belikhov_exploring_2025}) shows that a large proportion of variation in speed and power output during unconstrained riding can be explained by infrastructure characteristics and environmental influences, highlighting the adaptive nature of cyclist behavior. Similarly, overtaking maneuvers have been shown to depend on infrastructural and traffic-related factors. Using drone-based trajectory data, \citeauthor{wang_investigating_2022} (\citeyear{wang_investigating_2022}) identify significant relations between lane width, vehicle types, and rider characteristics in overtaking decisions. Beyond observed behavior, perceived safety has also been linked to specific infrastructure design elements such as seperation from motorized traffic and lane width \cite{gossling_subjectively_2022, von_stulpnagel_how_2022}.
+
+While traffic and infrastructure can influence behavior, the identification of local regimes in this work is performed independently of such environmental factors. Contextual variables are instead analyzed post hoc to interpret observed behavioral patterns, providing descriptive insight into how maneuvers manifest under varying traffic and infrastructural conditions without affecting the unsupervised abstraction of micro-level states.
 
 % state aggregation
 Although probabilistic frameworks such as Markov Chains or Hidden Markov models have been used to model sequences of behavioral states \cite{khattak_analysis_2017, yin_extracting_2022, he_multi-scenario_2025} and personal driving styles \cite{meng_human_2006,zou_multivariate_2022}], the conceptual value lies in the recognition that sequences of discrete regimes encode structure: transition rates, dwell times, and entropy measures provide principled descriptors of behavioral complexity without requiring explicit generative assumptions \cite{vegetabile_estimating_2019}. In this sense, a maneuver can be understood as an ordered composition of behavioral regimes, whose statistical properties summarize internal variability and execution patterns. Post hoc analysis of environmental context further allows interpretation of how these behaviors manifest under different traffic or infrastructure conditions, enhancing insight without constraining the abstraction process itself.
@@ -79,15 +81,6 @@ Taken together, this body of work motivates a modular, assumption-light abstract
 
 
 \section{Multi-Stage and Hierarchical Clustering Frameworks}
-\iffalse
-Discuss: Two-stage clustering, Hierarchical abstraction, Modular pipelines, Representation → clustering separation
-
-Key argument: Existing approaches either perform hierarchical clustering within a single algorithmic framework or rely on end-to-end learning. Modular multi-stage clustering with explicit intermediate representation aggregation is less studied.
-
-papers: nielsen, scheiner, ren 2017, lai, nakashima
-
-\fi
-
 Multi-stage clustering frameworks provide a structured approach to uncovering patterns in complex datasets by separating the analysis into modular steps. Rather than applying a single clustering algorithm directly to the raw data, these approaches first identify local or intermediate patterns, transform or aggregate them into higher-level representations, and then perform subsequent clustering to extract global structure. This strategy is particularly beneficial for data with heterogeneous, sequential, or high-dimensional characteristics, as it improves interpretability, enables stage-wise optimization, and allows flexible adaptation to different problem domains \cite{nielsen_hierarchical_2016, scheiner_multi-stage_2019}.
 
 Applications of multi-stage clustering can be found across a variety of fields, including time series analysis, sensor data processing, and behavioral modeling. For example, approaches in temporal data segment time series into sliding windows, perform initial clustering within each segment, and then aggregate the results to derive global clusters \cite{ren_sliding_2017, nakashima_performance_2016, lai_novel_2010, guijo-rubio_time-series_2021}. Across these studies, the core principle remains consistent: first-stage clustering captures fine-grained, local patterns, while second-stage clustering abstracts these into higher-level structures, allowing both local variation and global patterns to be represented.
@@ -96,16 +89,32 @@ In the present study, this multi-stage paradigm is applied to cyclist trajectory
 
 
 \section{Unsupervised Model Selection and Stability}
-\iffalse
-Discuss: Sensitivity of clustering to initialization, Silhouette limitations, Stability-based validation, 
 
-Transition: These considerations motivate the stability-oriented model selection strategy adopted in this thesis.
+Unsupervised clustering requires assessing the structural stability, validity and interpretability of the resulting clusters. 
+In contrast to supervised learning, no ground truth labels are available for direct performance evaluation. Consequently, clustering quality is typically examined through internal geometric criteria such as compactness and separation, as well as through external agreement measures across runs, initializations, and perturbation.
 
-papers: chen et al, coates and ng, 
-\fi
+\definecolor{Silver}{rgb}{0.752,0.752,0.752}
+\begin{table}[h!]
+	\centering
+	\footnotesize
+	\caption{Internal and External Validation Criteria for Unsupervised Clustering}
+	\label{tab:validation-criteria}
+	\begin{tblr}{
+			colspec = {l Q[l,5cm] c c},
+			rows = {valign=m},
+			hlines = {Silver},
+			hline{1,6} = {-}{0.08em,black},
+			hline{2} = {-}{black},
+		}
+		Metric                  & Measures                                                      & Range       & Interpretation \\
+		Adjusted Rand Index     & Agreement with reference labels                               & $[-1, 1]$   & higher=better  \\
+		Silhouette Score        & Cohesion vs separation                                        & $[-1, 1]$   & higher=better  \\
+		Davies-Bouldin Index    & Average similarity between clusters                           & $[0, \infty)$ & lower=better   \\
+		Calinski-Harabasz Index & Between-Cluster dispersion to within-cluster dispersion ratio & $[0, \infty)$ & higher=better  
+	\end{tblr}
+\end{table}
 
-
-
+Given the hierarchical and exploratory nature of the proposed framework, cluster stability and interpretability were prioritized over pure geometric separation. Therefore, model selection does not rely exclusively on maximum Silhouette score but incorporates stability under perturbation as well as quantitative assessment of cluster spread.
 
 
 Existing work either clusters full trajectories directly, identifies local behavioral regimes without higher-level abstraction, or relies on integrated end-to-end frameworks. A modular, interpretable, multi-stage clustering approach that first extracts local behavioral regimes and subsequently derives maneuver-level style representations remains insufficiently explored. This motivates the hierarchical framework proposed in the following chapter.
