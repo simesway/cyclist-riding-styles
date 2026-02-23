@@ -253,31 +253,62 @@ This representation forms the input space for local regime discovery described i
 
 
 \subsection{General Clustering Pipeline}
-Given the distinct dynamics at intersections compared to straight road segments, windows
-
-This sections describes the unsupervised generalized clustering pipeline. This applied to both clustering stages and designed modular, to easily swap each module and replace it by a more specialized procedure.
-Therefore and additionally the pipeline was kept simple and very basic with no too sophisticated algorithms and module (all standard ml).
+This section describes the generalized unsupervised clustering pipeline used in both clustering stages. The procedure is domain-independent and modular, allowing individual components to be replaced without affecting the overall structure. The pipeline is intentionally restricted to standard, well-established methods to ensure interpretability, reproducibility and computational robustness.
 
 \begin{center}
 	\textbf{Missing Figure: Visualization of General Clustering Pipeline}
 \end{center}
 
-\subsubsection{Feature Selection}
+\paragraph{Feature Filtering}
 
-To reduce multicollinearity and simplify the feature space, an iterative backward feature selection procedure was employed. In each iteration, pairs of features with high absolute correlation are identified, and one feature from each pair is removed \cite{guyon_introduction_2003}. The feature with higher mean correlation to all other features is discarded. Following correlation-based removal, multicollinearity is further mitigated by computing the Variance Inflation Factor (VIF) on standardized features and removing the feature with the highest VIF exceeding the specified threshold \cite{cheng_variable_2022}. This two-step filtering is repeated until no features violate the thresholds \cite{dormann_collinearity_2013}.
-The resulting feature set is then standardized passed to the next step in the pipeline.
-\subsubsection{Principal Component Analysis}
+To control multicollinearity and reduce redundancy, an iterative backward filtering procedure is applied.
 
-PCA is applied before k‑means to reduce dimensionality and decorrelate features \cite{ding_k-means_2004}, with whitening to scale components to unit variance, improving clustering with distance-based algorithms. \citeauthor{ding_k-means_2004} further show that k‑means centroids lie in the PCA subspace, providing a theoretical justification for this preprocessing.
+First, features with high pairwise absolute correlation are removed. For each correlated pair exceeding a predefined threshold, the feature with the larger average correlation to all remaining features is discarded \cite{guyon_introduction_2003}.
 
-\subsubsection{Clustering}
+Second, multicollinearity is further mitigated using the Variance Inflation Factor (VIF). Among features exceeding the VIF threshold, the feature withe the largest value is removed \cite{cheng_variable_2022}. 
 
--- Explain that i use KMeans and why --
+Both steps are repeated until all features satisfy the specified thresholds. The resulting feature matrix is standardized prior to dimensionality reduction.
+\paragraph{Dimensionality Reduction}
 
+Principal Component Analysis (PCA) is applied to obtain an orthogonal low-dimensional representation of the filtered feature space.
+
+Dimensionality is determined via an explained variance threshold. Whitening is applied to normalize component variance, ensuring isotropic scaling in the transformed space.
+
+Clustering is performed in PCA space.
+
+\paragraph{Clustering}
+
+Partition-based clustering is performed using K-means.
+
+K-means was selected because:
+\begin{itemize}
+	\item It provides stable centroid-based partitions
+	\item It scales efficiently to large datasets
+	\item It yields directly interpretable cluster prototypes
+	\item Preliminary experiments showed no consistent advantage of density-b
+\end{itemize}
+Clustering is repeated with multiple random initializations to mitigate local minima effects.
+
+While Gaussian Mixture Models and DBSCAN were considered, preliminary experiments indicated that K-means achieved comparable or better separation of micro-behavioral regimes on the current trajectory features.
+\iffalse
 While Gaussian Mixture Models and DBSCAN were considered, preliminary experiments indicated that K-means achieved comparable or better separation of micro-behavioral regimes on the current trajectory features, with lower computational cost and fewer hyperparameters. As such, K-means was selected as the primary clustering algorithm for all stages, providing a robust and interpretable baseline for multi-stage aggregation.
+\fi
 
+\paragraph{Clustering Stability}
+Since no ground truth labels are available, robustness under perturbation is used as the primary reliability criterion.
 
-\subsubsection{Clustering Stability}
+Clustering stability is quantified using the Adjusted Rand Index (ARI) under three perturbation mechanism:
+\begin{itemize}
+	\item \textbf{Subsample stability:} Clustering is recomputed on repeated 80\% subsamples. ARI is computed relative to the reference clustering restricted to the same subset
+	\item \textbf{Initialization stability:} Independent runs with different random seeds are compared
+	\item \textbf{Noise stability:} Additive Gaussian noise scaled by feature-wise standard deviation is applied before reclustering.
+\end{itemize}
+
+Each stability measure is repeated across multiple runs. Median, mean, standard deviation and quantiles of ARI are reported.
+
+Stability is interpreted as robustness of the partition under data and algorithmic perturbation rather than as a performance metric.
+
+\iffalse
 Following the notion of clustering stability as robustness under data and algorithmic perturbations (von Luxburg, 2010) \cite{luxburg_clustering_2010}, clustering stability was assessed using the Adjusted Rand Index (ARI) under subsampling, random initialization, and additive noise.
 
 For subsampling stability, a random subset comprising 80\% of the data was drawn without replacement. The clustering algorithm was refit on this subset, and ARI was computed between the resulting labels and the reference labels restricted to the same subset. To detect degenerate solutions, the minimum cluster fraction within each subsample was additionally recorded.
@@ -289,16 +320,15 @@ For noise stability, additive Gaussian noise was applied to the full dataset, wi
 Each stability measure was repeated across multiple runs with independent random seeds. Stability was summarized using the median, mean, standard deviation, and the 10th and 90th percentiles of the ARI distributions. Cases resulting in a single cluster were treated as undefined.
 
 Clustering quality was assessed separately using the silhouette score, computed once on a random subsample of the data using the reference clustering.
+\fi
 
+\paragraph{Internal Validity}
+Geometric seperation is evaluated using the Silhouette score. Cluster balance is monitored by tracking the minimum relative cluster size across repetitions.
 
-\subsubsection{Grid Search}
-A grid search was conducted over feature-selection thresholds (correlation and variance inflation factor), PCA dimensionality, and the number of clusters to identify configurations that yield both interpretable and stable cluster structures.
+Given the exploratory and hierarchical nature of the framework, geometric optimality is treated as secondary to structural stability and interpretability.
 
-For each hyperparameter combination, features were selected, dimensionality was reduced using PCA, and KMeans clustering was applied. Clustering stability was assessed over multiple runs using repeated subsampling and perturbations. Specifically, clustering was repeated n times on an 80\% stratified subsample of the data, and stability was quantified using the Adjusted Rand Index (ARI) under three conditions: variation due to subsampling, random noise, and random initialization. It was used as a robustness indicator rather than a strict selection criterion \cite{ben-david_sober_2006}, with interpretability guiding the final choice of clusters.
-
-Clustering quality was evaluated using the silhouette score computed on a subsample to reduce bias, while cluster balance was enforced by tracking the minimum relative cluster size across runs. For each metric, median values and variability were reported to obtain robust estimates and reduce sensitivity to outliers. This procedure allows selecting hyperparameters that balance clustering quality, stability, and cluster size constraints while mitigating overfitting. Using medians over repeated runs reduces the influence of stochastic variation inherent to KMeans and subsampling. 
-
-Grid search was performed over feature-selection thresholds (correlation: 0.7–0.95, VIF: 3–100), PCA dimensionality (explained variance: 60–95\%), and the number of clusters k (2–5) to identify configurations that yield both interpretable and stable cluster structures.
+\paragraph{Grid Search}
+A grid search is conducted over:
 
 \begin{table}[h]
 	\begin{tabular}{ll}
@@ -310,13 +340,32 @@ Grid search was performed over feature-selection thresholds (correlation: 0.7–
 	\end{tabular}
 \end{table}
 
-\subsubsection{Model Selection \& Interpretation}
+For each configuration median stability and validity measures are reported.
+The search aims to identify configurations that jointly satisfy:
+\begin{itemize}
+	\item Stability under perturbation
+	\item Acceptable geometric seperation
+	\item Plausible cluster sizes
+	\item Interpretability of cluster centroids
+\end{itemize}
 
-The final clustering configuration was selected manually by inspecting cluster means and choosing the setup that provided the most interpretable groupings.
+Stability serves as a robustness indicator rather than a strict optimization objective.
 
-Cluster centers can be interpreted in the original feature units, facilitating analysis of characteristic riding patterns. Feature indices for magnitude and volatility are automatically managed to support both split and joint analyses.
 
-differentiating clusters by looking at their feature means (including the magnitude speed features).
+\iffalse
+A grid search was conducted over feature-selection thresholds (correlation and variance inflation factor), PCA dimensionality, and the number of clusters to identify configurations that yield both interpretable and stable cluster structures.
+
+For each hyperparameter combination, features were selected, dimensionality was reduced using PCA, and KMeans clustering was applied. Clustering stability was assessed over multiple runs using repeated subsampling and perturbations. Specifically, clustering was repeated n times on an 80\% stratified subsample of the data, and stability was quantified using the Adjusted Rand Index (ARI) under three conditions: variation due to subsampling, random noise, and random initialization. It was used as a robustness indicator rather than a strict selection criterion \cite{ben-david_sober_2006}, with interpretability guiding the final choice of clusters.
+
+Clustering quality was evaluated using the silhouette score computed on a subsample to reduce bias, while cluster balance was enforced by tracking the minimum relative cluster size across runs. For each metric, median values and variability were reported to obtain robust estimates and reduce sensitivity to outliers. This procedure allows selecting hyperparameters that balance clustering quality, stability, and cluster size constraints while mitigating overfitting. Using medians over repeated runs reduces the influence of stochastic variation inherent to KMeans and subsampling. 
+
+Grid search was performed over feature-selection thresholds (correlation: 0.7–0.95, VIF: 3–100), PCA dimensionality (explained variance: 60–95\%), and the number of clusters k (2–5) to identify configurations that yield both interpretable and stable cluster structures.
+\fi
+
+
+\paragraph{Model Selection \& Interpretation}
+The final configuration is selected based on stability distributions, cluster balance and practical interpretability of cluster centroids.
+Centroids are mapped back to the original feature space to support domain-level interpretation. Interpretability is prioritized over marginal improvement in geometric separation..
 
 \subsection{Level 1: Local Riding Behaviour (Window Level)}
 \label{meth:level1}
