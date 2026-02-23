@@ -1,6 +1,6 @@
 \chapter{Methodology}
 
-\section{objective}
+\section{Objective}
 ML methodology contribution applied to traffic data, without making strong safety or infrastructure claims.
 A modular, multi-stage unsupervised clustering framework for hierarchical maneuver style discovery in trajectory data.
 Application domain: cyclist maneuvers.
@@ -8,100 +8,276 @@ Primary contribution: methodological.
 
 Safety implications = exploratory, not causal.
 
+pipeline and stage design with modularity, swappable methods, and optimization in mind. this is more a concept than a full investigation of the idea and it can be extended or specialized at several places at each stage.
 
 The framework consists of three stages: maneuver extraction, local riding style clustering, maneuver level clustering and conditioned analysis. Each module was designed to ensure reproducibility, robustness and flexibility.
 
-\section{Dataset}
-Dataset Description \& Data preprocessing
+\section{Framework Overview}
+The framework consists of four stages: (1) maneuver extraction, (2) window-level regime identification, (3) maneuver-level aggregation and clustering, and (4) environment-conditioned interpretation.
 
+\begin{center}
+\textbf{TODO Figure: Pipeline Flowchart}
+\end{center}
+
+\section{Dataset}
+
+\begin{center}
+	\textbf{TODO Section: Dataset Description and Preprocessing}
+\end{center}
+
+\iffalse
 \citeauthor*{kutsch_tumdotmuc_2024}
 
 The dataset had some problems: random 1-10 frame flips of the heading angle by pi suggesting flipped bounding boxes due to inaccuracies in data preprocessing. sometimes some trajectories segments were duplicated and assigned with a different track-id. 
 for these things data cleaning and preprocessing had to be done.
+\fi
 
-\section{Interaction Retrieval}
-The Analysis includes the extraction of special maneuvers (following, overtaking), but also the calculation of safety measures between cyclists and other traffic participants (cyclists, cars, pedestrians). Therefore encounters between traffic participants have to be extracted from the trajectory dataset. An encounter is a pair of traffic participants that coexist in a single timestamp \cite{perez_castro_empirical_2025} within a certain distance \cite{mohammed_characterization_2019}.
 
-To efficiently index and search for potential trajectory encounters, a Spatio-Temporal R-Tree (STR-Tree) was used \cite{deng_trajectory_2011}, which serves as an optimized spatial indexing structure for querying spatial relationships between trajectories. 
+\section{Interaction \& Maneuver Extraction}
 
-Trajectories were initially simplified using the Douglas-Peucker algorithm, which reduces the number of trajectory points while maintaining the characteristic shape of the movement \cite{zheng_trajectory_2015}. The simplified trajectories are then split into segments at the remaining critical points, effectively reducing computational overhead while preserving the fundamental geometric properties of the original trajectories.
+\subsection{Encounter Retrieval}
+Encounter between traffic participants were identified as temporally overlapping pairs whose mutual distance falls below a predefined threshold \cite{perez_castro_empirical_2025, mohammed_characterization_2019}.
 
-All the resulting segments were then used to construct an STR-Tree, which enables efficient spatial intersection queries. Given a target trajectory, a buffer zone is defined around it with a user-specific distance. The STR-Tree is queried for all segments intersecting this buffer, yielding candidate objects that may interact with the target.
-To manage computational resources, the analysis was constrained to small batches of target trajectories, with the time window limited to maximum time window of the target trajectories.
+To enable repeated neighborhood queries, support SSM feature computation and ensure scalability across multiple entities, trajectories were indexed using a STR-Tree \cite{deng_trajectory_2011}. Prior to indexing, trajectories were geometrically simplified with the Douglas-Peucker algorithm, reducing computational load while preserving their characteristics \cite{zheng_trajectory_2015}.
 
-For each candidate, relative distances and speeds \cite{perez_castro_empirical_2025} are computed at matching timestamps. These encounter metrics enable further domain specific filtering on these interaction candidates. The structured output can be used for further analysis, such as interaction and maneuver identification and the computation of surrogate safety metrics.
+For each target trajectory, candidate encounters were retrieved via spatial buffer queries and subsequently validated by computing timestamp-aligned relative distances and velocities. The resulting encounter set forms the basis for interaction and maneuver identification as well as surrogate safety analysis.
 
-\section{Maneuvers}
 
-All interaction candidates were additionally filtered by the three selection criteria from Kutsch et al. \cite{kutsch_analyzing_2025} to obtain interactions:
+\subsection{Interactions}
+Encounters were refined into interactions using established filtering criteria \cite{kutsch_analyzing_2025}. An interaction must satisfy:
 \begin{enumerate}
-	\item Distance Constraint: Identified encounters with at least one timestamp where the absolute distance between center points was less than 20 m, while ensuring all timestamps maintained a maximum distance of 40 m.
-	\item Temporal Criterion: Minimum 5-second trajectory overlap.
-	\item Movement Validation: Each trajectory moves at least 10m.
-	\item Heading Criterion: was used inside maneuver detection code
+	\item At least one timestamp with inter-object distance <20m and no timestamp exceeding 40m
+	\item Minimum temporal overlap of 5 seconds
+	\item Each object travels at least 10m
 \end{enumerate} 
 
-As often done in driving behavior analysis, moments of zero speeds were filtered out \cite{mohammadnazar_classifying_2021, li_volatility-based_2025}.
-Extending this a constraint was set to exclude non-moving objects, by only keeping timestamps where the velocity of an object is above the average human walking speed of 1.4-1.48 m/s² \cite{bartels_bewegungsverhalten_2014}, to avoid including false maneuvers, e.g. occurring during queueing before an intersection.
+Periods of zero velocity were removed to exclude stationary states \cite{mohammadnazar_classifying_2021, li_volatility-based_2025}. Additionally, timestamps with velocities below average walking speed (1.4-1.48 m/s) \cite{bartels_bewegungsverhalten_2014} were excluded to avoid inaccurate maneuvers caused by queueing behavior or congestion effects.
 
-For each interaction, both trajectories were synchronized by timestamp and the lateral and longitudinal distances are computed relative to a chosen vehicle's frame of reference:
-$$formula?$$
+\subsection{Maneuvers}
+A maneuver $M$ is defined as a temporally bounded driving or riding event performed by an ego participant $e$. Formally, a maneuver is represented by the tuple
+$$M = (e,[t_\text{start},t_\text{end}], \tau, \mathcal{C},\mathbf{f}_M)$$
+where  $\tau$ denotes the maneuver type, $\mathcal{C}$ optional contextual entities and $\mathbf{f}_M$ the maneuver-specific descriptors.
+Depending on the maneuver type, the context can include another traffic participant (e.g. following, overtaking) and/or environmental elements (e.g. turning at an intersection).
 
-Most studies characterize a following and overtaking maneuvers using longitudinal and lateral distances defined in a relative coordinate system from the perspective of the initially following cyclist \cite{khan_characteristics_2001, kutsch_analyzing_2025, mocsari_analysis_2009, mohammed_characterization_2019}. This transformation reduces dependency on global orientation and isolates relative motion between interacting cyclists. Consequently, maneuver analysis can be conducted independently of full map-matching, as the interaction is described purely in relational terms.
-By smoothing the longitudinal and lateral distances using a Gaussian temporal kernel of 0.6s yielded the best results for determining the start and end points of a maneuver, aswell as reducing multiple zero-crossings due to noise and eliminating spikes that probably originate from flips in the orientation of the bounding boxes in the raw dataset.
-
-\subsection{Following}
-
-The smoothed longitudinal displacement signal is analyzed for sign flips, which indicate transitions in relative positioning \cite{hoogendoorn_bicycle_2016, mohammed_characterization_2019}. The trajectory is divided into contiguous intervals between these zero crossings to focus on periods of consistent follower-leader ordering.
-
-Additional spatial constraints were applied to restrict candidate interactions: the absolute lateral distance was required to remain below 1 m and the longitudinal distance to lie between 1 m and 30 m. Temporal filtering included a maximum Time Headway (THW) of 6 s, consistent with the headway-based separation of constrained and unconstrained riding reported in \cite{kutsch_analyzing_2025, bachir_identifying_2025}, and a minimum interaction duration of 1 s. Furthermore, a directional constraint was imposed, requiring the relative heading difference to remain below 35° \cite{feng_automatic_2023, kutsch_analyzing_2025}.
+This abstraction seperates maneuver structure (temporal bounds and context) from maneuver semantics (type-specific descriptors), ensuring consistent handling across maneuver types and facilitating downstream processing.
 
 
-The candidates must fulfill all criteria for 13 consecutive timestamps to be labeled as Following Maneuvers. The interval detection method allows for multiple potential following segments within a single encounter pair, filtering out moments of non-moving. 
-The candidates fulfilling all criteria for 13 consecutive timestamps (1 second) are labeled as Following Maneuvers.
+Most studies characterize interaction-based maneuvers (following, overtaking) using longitudinal and lateral distances defined in a relative coordinate system from the perspective of the maneuver-executing participant \cite{khan_characteristics_2001, kutsch_analyzing_2025, mohammed_characterization_2019}. This representation reduces dependency on global orientation and isolates the relative motion between interacting cyclists.
+
+For two interacting traffic participants $e$ (ego) and $o$ (other), let $\theta_e(t)$ be the heading angle of $e$. Then the longitudinal and lateral distances are computed as:
+$$\Delta x(t) = x_o(t) - x_e(t), \quad \Delta y(t) = y_o(t) - y_e(t)$$
+\begin{align*}
+	d_{\text{long}}(t) &= \Delta x(t)\cos\theta_e(t) + \Delta y(t)\sin\theta_e(t) \\
+	d_{\text{lat}}(t)  &= -\Delta x(t)\sin\theta_e(t) + \Delta y(t)\cos\theta_e(t)
+\end{align*}
+
+Smoothing the longitudinal and lateral signals with a Gaussian kernel ($\sigma$ = 0.6s) has been found to reduce zero-crossings caused by noise and improve the identification of maneuver start and end points.
+
+
+\subsubsection{Following Interactions}
+
+Following interactions describe periods in which an ego participant maintains a consistent leader-follower relationship with another participant. Formally, a following interaction $M_F$ is a maneuver $M$ with context $\mathcal{C}=\{o\}$, where $o$ is the leader.
+
+Candidate intervals are identified by analyzing the longitudinal displacement in the ego-centric frame for sign flips, which indicate changes in relative ordering \cite{mohammed_characterization_2019}. Additional constraints ensure meaningful following behavior, including:
+
+\begin{itemize}
+	\item \textbf{Maximum Time Headway:} threshold seperating constrained from unconstrained riding, typically around 5-6 s \cite{hoogendoorn_bicycle_2016,kutsch_analyzing_2025, bachir_identifying_2025}
+	\item \textbf{Spatial constraints:} $|d_{\text{lat}}(t)|\leq 1$m and 1m $\leq d_{\text{long}}(t) \leq$ 30m
+	\item \textbf{Directional consistency:} relative heading difference $\leq$ 35° \cite{feng_automatic_2023, kutsch_analyzing_2025}
+	\item \textbf{Persistence:} criteria must hold for 1s 
+	
+\end{itemize}
 
 The approach ensures robust detection of following behaviors by combining spatial, temporal, and directional constraints.
 
-\subsection{Overtaking}
+description of the feature vector:
+- justification for relative speeds: \cite{dias_exploring_2023}
 
-Longitudinal signals are analyzed to detect sign changes from positive to negative, indicating potential overtaking events \cite{kutsch_analyzing_2025, mohammed_characterization_2019}. To improve robustness, spurious crossings were filtered by requiring sign persistence over multiple frames, and temporally adjacent crossings were merged to account for oscillations around zero. 
-Each detected crossing defined a window of interest centered on the longitudinal sign flip. These windows were refined by selecting start and end candidates based on local extrema of the longitudinal displacement and by limiting the temporal extent to ensure consistency.
+\subsubsection{Overtaking Maneuver}
 
-\citeauthor*{kutsch_analyzing_2025} (\citeyear{kutsch_analyzing_2025}) proposed a detailed rule-based maneuver edge detection relying on fixed lateral distance and lateral velocity thresholds combined with manual verification. While effective for descriptive scenario analysis, such a procedure is difficult to integrate into a fully automated multi-stage clustering pipeline due to its sensitivity to threshold tuning and the reliance on manual inspection.
+An overtaking maneuver describes a maneuver in which an ego participant $e$ moves from a trailing to a leading position relative to another participant $o$. Formally, an overtaking maneuver $M_O$ is a maneuver $M$ with context $\mathcal{C}=\{o, t_c\}$. The overtaking point $t_c$ denotes the timestamp at which the relative longitudinal ordering changes.
 
-Therefore, a simplified and noise-robust edge detection scheme was developed. The method prioritizes robustness and automation compatibility over exact boundary precision. 
-Differences in overtaking counts resulting from the modified edge definition reflect methodological choices rather than inconsistencies.
+\paragraph{Detection Principle}
+Overtaking is identified through the ego-centric longitudinal displacement $d_{\text{long}}(t)$. A candidate event is detected when a persistent sign change from positive to negative occurs, indicating a transition from trailing to leading position. To reduce false detections caused by noise or oscillations around zero, sign flips must persist over multiple consecutive frames. Each candidate window is then refined to determine maneuver start and end points. 
+
+\paragraph{Automated Edge Detection}
+Unlike the rule-based procedure proposed by \citeauthor{kutsch_analyzing_2025} (\citeyear{kutsch_analyzing_2025}), which was designed for precise analytical boundary identification and relied on fixed lateral distance and velocity thresholds combined with manual verification, the present work requires a fully automated and noise-robust detection strategy suitable for integration into a multi-stage clustering framework.
+
+While the approach of \citeauthor{kutsch_analyzing_2025} enables highly accurate edge definitions for detailed scenario analysis, it is sensitive to manual threshold calibration and not directly scalable to large datasets or modular unsupervised pipelines. The objective here is therefore not maximal geometric precision but robust and reproducible maneuver segmentation.
+
+Given a detected overtaking point $t_c$, maneuver start and end frames are determined via an adaptive threshold search on the absolute lateral displacement signal $|d_\text{lat}(t)|$.
+
+The procedure follows three principles:
+
+\begin{enumerate}
+	\item \textbf{Local search window} A bounded backward-forward search (minimum and maximum frame limits) ensures temporal locality around $t_c$
+	\item \textbf{Logarithmic adaptive thresholds} Instead of using fixed lateral distance cutoffs, a set of logarithmically spaced thresholds is generated between a minimal displacement (e.g. 0.05m) and the observed lateral distance at crossing point.
+	This allows the algorithm to adapt to maneuver magnitude while remaining robust to noise and small oscillations.
+	\item \textbf{Sanity validation checks} Candidate edges are accepted only if:
+	\begin{itemize}
+		\item longitudinal displacement evolves monotonically through the maneuver
+		\item minimum lateral distance at overtaking point
+		\item maximum overall lateral displacement
+		\item duration exceeds a minimum threshold
+	\end{itemize}
+\end{enumerate}
+
+Operationally, the algorithm searches backward from $t_c$ for the last frame, whose lateral displacement falls below the smallest feasible adaptive threshold and analogously forward for the end frame. If validation criteria are not satisfied, the candidate is discarded.
+
+For reproducibility, the following parameters were used: a backward-forward search window of 10-125 frames, a minimum lateral separation at crossing of 0.8m, a maximum lateral displacement of 3m and a set of five logarithmically spaced lateral thresholds ranging from 0.05m to 1.2m.
+
+The design prioritizes automation compatibility, scale robustness and reproducibility, making it suitable for hierarchical clustering applications.
+
+For validated and complete overtaking maneuvers, the descriptive feature vector $\mathbf{f}_{M_O}$ is extracted and the full feature specification is provided in the Appendix.
+
+\iffalse
+
+For validated and complete maneuvers, the module extracts descriptive features \cite{khan_characteristics_2001}, with full details provided in \textbf{Appendix \ref{sec:overtaking_features}}. These features capture the nuanced dynamics of overtaking maneuvers across temporal, spatial and kinematic domains.
+
+\fi
+
+\begin{center}
+	\textbf{TODO Figure: Visualization of Edge Detection Algorithm}
+\end{center}
 
 
-The maneuver boundaries are defined geometrically as the last frame in which the overtaking cyclist remains laterally aligned behind the leading cyclist, with the start and end corresponding to the frames where the lateral displacement approaches zero relative to the crossing configuration. Operationally, this is determined using the absolute lateral displacement signal with a logarithmically scaled set of adaptive thresholds.
-
-Thresholds are generated dynamically based on the lateral distance at the overtaking point, ranging from 0.05 m to the observed maximum displacement (up to 1.5 m), with 5–7 logarithmically spaced levels providing stable performance. Edge detection proceeds backward and forward from the crossing point within constrained search ranges (minimum 10 frames, maximum 125–130 frames). Candidate maneuvers are validated through monotonicity checks of longitudinal displacement, lateral distance constraints (minimum 0.8 m at crossing \cite{perez_castro_empirical_2025}, maximum 3 m), minimum duration requirements, and trajectory consistency checks.
-
-For validated candidates, the module extracts descriptive features \cite{khan_characteristics_2001}, with full details provided in \textbf{Appendix \ref{sec:overtaking_features}}. These features capture the nuanced dynamics of overtaking maneuvers across temporal, spatial and kinematic domains.
 
 \section{Hierarchical Riding Style Identification}
 
-For the following stages of the analysis, the maneuvers were seperated. First the maneuvers were segmented using the sliding window approach, resulting in fixed-length temporal windows of 1s duration with 50\% overlap \cite{li_volatility-based_2025, mohammadnazar_classifying_2021}, a common approach for modeling short-term driving and riding dynamics while preserving temporal continuity. For each window three sets of features are extracted and aggregated, each used by a different stage of the analysis and separated cleanly to ensure domain separation. The feature sets are Riding/Volatility, Traffic and Infrastructure descriptive features. 
+
+This section describes the hierarchical pipeline, which is applied to both maneuvers individually.
+
+\subsection{Window-Based Behavioral Representation}
+
+The first stage of the hierarchical pipeline consists of segmenting each maneuver into short-term temporal windows and extracting descriptive features that characterize local riding behavior. This approach operationalizes the concept of micro-behavioral states, which capture short term variations in rider dynamics while preserving temporal continuity \cite{li_volatility-based_2025, bachir_identifying_2025, mohammadnazar_classifying_2021}.
+
+\subsubsection{Window Segmentation}
+Each maneuver is segmented using a sliding window of 3-second duration with 50\% overlap. 
+This window length balances capturing short-term riding volatility and reflecting longer-term behavioral trends, following the findings of \citeauthor{li_volatility-based_2025} (\citeyear{li_volatility-based_2025}), who demonstrated that 1-second windows are suitable for detecting rapid fluctuations, 5-second windows for sustained aggressive patterns and 3-second windows achieve an optimal trade-off between the two. 
+The resulting windows provide a consistent temporal resolution for extracting local behavioral states, which serve as the input for regime discovery and subsequent aggregation.
+
+\iffalse
+First the maneuvers were segmented using the sliding window approach, resulting in fixed-length temporal windows of 1s duration with 50\% overlap \cite{li_volatility-based_2025, mohammadnazar_classifying_2021}, a common approach for modeling short-term driving and riding dynamics while preserving temporal continuity. For each window three sets of features are extracted and aggregated, each used by a different stage of the analysis and separated cleanly to ensure domain separation. The feature sets are Riding/Volatility, Traffic and Infrastructure descriptive features. 
+\fi
+
+\subsubsection{Feature Sets}
+\label{meth:window-feature-set}
+
+Each window is described by three distinct feature sets: riding dynamics, traffic context and infrastructure characteristics. These sets are treated independently to preserve domain seperation, ensuring that subsequent clustering reflects meaningful behavioral variation rather than the environment.
+
+Each behavioral state is characterized by internal and external (environment) factors that make up a local behavioral state. The environment is defined by traffic and infrastructure related features.
+Each feature set is standalone and serves a different purpose.
+
+\paragraph{Riding Dynamics}
+
+Riding dynamics capture the internal state of the ego cyclist and are derived from kinematic signals such as speed, longitudinal and lateral acceleration and yaw rate \cite{arvin_how_2019, arvin_safety_2021, bachir_identifying_2025}. 
+Volatility features quantify short-term variability and fluctuations within each window. 
+For each signal, the sample standard deviation, mean absolute deviation, coefficient of variation and quartile coefficient of variation are computed (Table~\ref{tab:volatility}). 
+These metrics provide a principled basis for clustering windows into local behavioral regimes, reflecting micro-behavioral variation rather than absolute magnitude differences. Additionally, magnitude metrics are applied to each kinematic signal, which quantify motion intensity and include minimum, maximum and mean.
 
 
-Since riding in and around intersections differ in dynamics from riding in straight street segments, the windows were split in two groups depending on the distance to a traffic light (easier to obtain than center of intersection). The intersection- and non-intersection-windows were clustered seperately. The Maneuver-level local regime aggregation is performed over all windows (intersection and non-intersection).
+\begin{itemize}
+	\item \textbf{Magnitude features} quantify motion intensity, including mean, minimum, maximum and percentile values for speed, acceleration and yaw rate. 
+	\item \textbf{Volatility metrics} reflect the temporal irregularity of motion, which has been shown to correlate with riding style, maneuver execution and behavioral risk \cite{mohammadnazar_classifying_2021, li_volatility-based_2025, kamrani_extracting_2018, yarlagadda_exploring_2022}.
+\end{itemize}
 
-The same clustering pipeline was used for clustering windows into local riding regimes and maneuvers into modes. (this might be an analysis how this framework performs on maneuvers)
+% \usepackage{color}
+% \usepackage{tabularray}
+\definecolor{Silver}{rgb}{0.752,0.752,0.752}
+\begin{table}[h!]
+	\centering
+	\caption{Volatility Metrics}
+	\label{tab:volatility}
+	\begin{tblr}{
+			row{1} = {font=\bfseries},
+			column{even} = {c},
+			column{3} = {l},
+			hlines = {Silver},
+			hline{1,12} = {-}{0.08em,black},
+			hline{2} = {-}{black},
+		}
+		Measure                            & Definition                                          \\
+		Sample Standard Deviation          & $s = \sqrt{\frac{1}{n-1}\sum_{i=1}^{n}(x_i-\bar{x})^2}$ \\
+		Sample Mean Absolute Deviation    & MAD $ = \frac{1}{n-1}\sum_{i=1}^n|x_i-\bar{x}|$                \\
+		Coefficient of Variation           & CV $ = \frac{s}{\bar{x}}$                                 \\
+		Quartile Coefficient of Variation  & QCV $ = \frac{Q_3 - Q_1}{|Q_3| + |Q_1|}$                   
+	\end{tblr}
+\end{table}
 
-\subsection{Feature Selection}
+The magnitude features on speed were excluded from clustering to avoid cluster generation to be based on speed intensity.
+To avoid clustering being driven by absolute speed differences, magnitude features for speed are excluded.
+
+\paragraph{Traffic Context}
+\label{meth:traffic}
+The surrounding traffic environment is characterized using surrogate safety measures (SSMs), which quantify the operational risk posed by other traffic participants \cite{wang_review_2021}. For each timestamp within a window, proximity counts, minimal Time-To-Collision (TTC), minimal Distance-At-Closest-Approach (DCA) and Deceleration-To-Avoid-Crash (DRAC) are computed relative to all participants.
+These measures are aggregated across the window to produce statistics such as mean, maximum, percentile thresholds and exposure fractions. SSMs are computed seperately for different participant classes (cyclists, pedestrians, motorized vehicles), enabling later analysis of cluster-specific interactions with distinct traffic types. 
+
+
+\paragraph{Infrastructure Characteristics}
+Infrastructure features describe the surrounding road environment, derived from the OpenDrive file associated with the TUMDOT-MUC dataset. Each window is characterized by metrics such as lane width, lane width entropy, lane type, lane type entropy \cite{bachir_identifying_2025}, relative lane position, offset from lane center, distance to the nearest traffic light and proportion of time spent on different surface types (bike lane, sidewalk, roadway). Empirical studies indicate that infrastructure characteristics substantially influence rider behavior and maneuver execution \cite{belikhov_exploring_2025, wang_investigating_2022, gossling_subjectively_2022}.
+
+
+
+\iffalse
+The TUMDOT-MUC dataset comes with a OpenDrive file, which enables map matching and the characterization of the surrounding infrastructure. 
+Features that are computed for the window:
+- shannon entropy on lane width
+- shannon entropy on lane type \cite{bachir_identifying_2025}
+- relative lane position
+- offset from lane center
+- distance to a traffic light
+- proportion of time spend on [bikelane, sidewalk, motorway]
+
+distance to traffic light (not intersection because directly extractable from xodr) within 60 meters (first fixation of traffic light between 35 and 60m \cite{rupi_visual_2019})
+collision avoidance and lane deviation \cite{kuderer_learning_2015}
+traffic flow state key factor influencing style \cite{ren_lane-change_2025}
+\fi
+
+
+\subsubsection{Scenario Separation}
+Riding dynamics vary considerably between intersections and straight road segments due to differences in environmental complexity, traffic density and rider decision-making. Empirical studies support this distinction: \citeauthor{li_volatility-based_2025} (\citeyear{li_volatility-based_2025}) observed that entropy of driving style distributions is consistently higher in intersection scenarios, indicating greater diversity and uncertainty in behavior compared to non-intersections. Similarly, \citeauthor{mohammadnazar_classifying_2021} (\citeyear{mohammadnazar_classifying_2021}) found that driving styles differ across roadway contexts, with environmental factors such as land use, street type and surrounding traffic contributing to variations in driver behavior and volatility.  
+
+Motivated by these findings, windows are categorized into \textbf{intersection} and \textbf{non-intersection} groups based on the distance to the nearest traffic light, which provides a reliable proxy for intersection proximity. Windows in each category are clustered separately to capture context-specific behavioral regimes. Subsequent maneuver-level aggregation, however, considers all windows jointly, ensuring that the final maneuver representation reflects the full spectrum of local behaviors while preserving the influence of scenario-specific complexity.
+
+
+\subsubsection{Window Representation}
+Let a maneuver $m$ be segmented into $T_m$ overlapping windows indexed by $t = 1, \ldots,T_m$.
+Each window is defined as the tuple
+$$w_t = \left(t_\text{start}^{(t)}, t_\text{end}^{(t)}, s_t, \mathbf{x}_t\right)$$
+where $t_\text{start}^{(t)}$ and $t_\text{end}^{(t)}$ denote the temporal bounds of the window, $s_t\in S = \{I,N\}$ the scenario identifier (intersection or non-intersection) and 
+$$\mathbf{x}_t = \left(x_t^\text{riding}, x_t^\text{traffic}, x_t^\text{infrastructure}\right)$$
+the concatenated feature representation derived from riding, dynamics, traffic context and infrastructure characteristics.
+The set of all windows belonging to maneuver $m$ is denoted as
+$$\mathcal{W}_m=\{w_1, \ldots,w_{T_m}\}.$$
+This representation forms the input space for local regime discovery described in the subsequent section.
+
+
+\subsection{General Clustering Pipeline}
+Given the distinct dynamics at intersections compared to straight road segments, windows
+
+This sections describes the unsupervised generalized clustering pipeline. This applied to both clustering stages and designed modular, to easily swap each module and replace it by a more specialized procedure.
+Therefore and additionally the pipeline was kept simple and very basic with no too sophisticated algorithms and module (all standard ml).
+
+\begin{center}
+	\textbf{Missing Figure: Visualization of General Clustering Pipeline}
+\end{center}
+
+\subsubsection{Feature Selection}
 
 To reduce multicollinearity and simplify the feature space, an iterative backward feature selection procedure was employed. In each iteration, pairs of features with high absolute correlation are identified, and one feature from each pair is removed \cite{guyon_introduction_2003}. The feature with higher mean correlation to all other features is discarded. Following correlation-based removal, multicollinearity is further mitigated by computing the Variance Inflation Factor (VIF) on standardized features and removing the feature with the highest VIF exceeding the specified threshold \cite{cheng_variable_2022}. This two-step filtering is repeated until no features violate the thresholds \cite{dormann_collinearity_2013}.
 The resulting feature set is then standardized passed to the next step in the pipeline.
-\subsection{Principal Component Analysis}
+\subsubsection{Principal Component Analysis}
 
-PCA is applied before k‑means to reduce dimensionality and decorrelate features \cite{ding_k-means_2004}, with whitening to scale components to unit variance, improving clustering with distance-based algorithms \cite{montavon_learning_2012}. Ding \& He (2004) \cite{ding_k-means_2004} further show that k‑means centroids lie in the PCA subspace, providing a theoretical justification for this preprocessing.
+PCA is applied before k‑means to reduce dimensionality and decorrelate features \cite{ding_k-means_2004}, with whitening to scale components to unit variance, improving clustering with distance-based algorithms. \citeauthor{ding_k-means_2004} further show that k‑means centroids lie in the PCA subspace, providing a theoretical justification for this preprocessing.
 
-\subsection{Clustering}
+\subsubsection{Clustering}
+
+-- Explain that i use KMeans and why --
 
 While Gaussian Mixture Models and DBSCAN were considered, preliminary experiments indicated that K-means achieved comparable or better separation of micro-behavioral regimes on the current trajectory features, with lower computational cost and fewer hyperparameters. As such, K-means was selected as the primary clustering algorithm for all stages, providing a robust and interpretable baseline for multi-stage aggregation.
 
 
-\subsection{Clustering Stability}
+\subsubsection{Clustering Stability}
 Following the notion of clustering stability as robustness under data and algorithmic perturbations (von Luxburg, 2010) \cite{luxburg_clustering_2010}, clustering stability was assessed using the Adjusted Rand Index (ARI) under subsampling, random initialization, and additive noise.
 
 For subsampling stability, a random subset comprising 80\% of the data was drawn without replacement. The clustering algorithm was refit on this subset, and ARI was computed between the resulting labels and the reference labels restricted to the same subset. To detect degenerate solutions, the minimum cluster fraction within each subsample was additionally recorded.
@@ -115,7 +291,7 @@ Each stability measure was repeated across multiple runs with independent random
 Clustering quality was assessed separately using the silhouette score, computed once on a random subsample of the data using the reference clustering.
 
 
-\subsection{Grid Search}
+\subsubsection{Grid Search}
 A grid search was conducted over feature-selection thresholds (correlation and variance inflation factor), PCA dimensionality, and the number of clusters to identify configurations that yield both interpretable and stable cluster structures.
 
 For each hyperparameter combination, features were selected, dimensionality was reduced using PCA, and KMeans clustering was applied. Clustering stability was assessed over multiple runs using repeated subsampling and perturbations. Specifically, clustering was repeated n times on an 80\% stratified subsample of the data, and stability was quantified using the Adjusted Rand Index (ARI) under three conditions: variation due to subsampling, random noise, and random initialization. It was used as a robustness indicator rather than a strict selection criterion \cite{ben-david_sober_2006}, with interpretability guiding the final choice of clusters.
@@ -124,59 +300,44 @@ Clustering quality was evaluated using the silhouette score computed on a subsam
 
 Grid search was performed over feature-selection thresholds (correlation: 0.7–0.95, VIF: 3–100), PCA dimensionality (explained variance: 60–95\%), and the number of clusters k (2–5) to identify configurations that yield both interpretable and stable cluster structures.
 
+\begin{table}[h]
+	\begin{tabular}{ll}
+		Hyperparameter           & Search range                           \\
+		correlation threshold    & $[0.7, 0.75, 0.8, 0.85, 0.9, 0.95, 1]$ \\
+		vif threshold            & $[3, 5, 10, 50, 100, 1000]$            \\
+		PCA - explained variance & $[60\%, 70\%, 80\% 90\%, 95\%]$        \\
+		k                        & $[2, 3, 4, 5]$                        
+	\end{tabular}
+\end{table}
+
+\subsubsection{Model Selection \& Interpretation}
+
 The final clustering configuration was selected manually by inspecting cluster means and choosing the setup that provided the most interpretable groupings.
+
+Cluster centers can be interpreted in the original feature units, facilitating analysis of characteristic riding patterns. Feature indices for magnitude and volatility are automatically managed to support both split and joint analyses.
+
+differentiating clusters by looking at their feature means (including the magnitude speed features).
 
 \subsection{Level 1: Local Riding Behaviour (Window Level)}
 \label{meth:level1}
-
-Within each window, magnitude- \cite{enev_automobile_2016} and volatility-based features are extracted from kinematic signals.
-
-Magnitude features describe the intensity of motion and include speed, longitudinal acceleration, and yaw rate. For each of these signals, minimum and maximum values within the window are computed.
-
-Volatility features capture short-term variability and dynamic fluctuations. They are derived from speed, longitudinal and lateral acceleration, and rotational fluctuations. For each signal, the mean, mean absolute deviation, coefficient of variation, and quartile coefficient of variation are calculated.
-
-
-
-% \usepackage{color}
-% \usepackage{tabularray}
-\definecolor{Silver}{rgb}{0.752,0.752,0.752}
-\begin{table}
-	\centering
-	\caption{Your table caption here}
-	\label{tab:mag-vol}
-	\begin{tblr}{
-			row{1} = {font=\bfseries},
-			column{even} = {c},
-			column{3} = {l},
-			hlines = {Silver},
-			hline{1,12} = {-}{0.08em,black},
-			hline{2} = {-}{black},
-		}
-		Measure                           & Category & Definition                                          \\
-		Mean                              & Mag      & $\mu = \frac{1}{n}\sum_{i=1}^n x_i$                 \\
-		Minimum                           & Mag      & min $ = \min(x_i)$                                   \\
-		Maximum                           & Mag      & max $ = \max(x_i)$                                   \\
-		Maximum Absolute                  & Mag      & max $_{abs} = \max(|x_i|)$                                       \\
-		90th Percentile                   & Mag      & $P_{90} = P_{90}(x)$                                         \\
-		90th Percentile (abs)             & Mag      & $P_{90,abs} = P_{90}(|x|)$                                       \\
-		Sample Standard Deviation         & Vol      & $s = \sqrt{\frac{1}{n-1}\sum_{i=1}^{n}(x_i-\bar{x})^2}$ \\
-		Sample Mean Absolute Deviation    & Vol      & MAD $ = \frac{1}{n}\sum_{i=1}^n|x_i-\bar{x}|$                \\
-		Coefficient of Variation          & Vol      & CV $ = \frac{s}{\bar{x}}$                                 \\
-		Quartile Coefficient of Variation & Vol      & QCV $ = \frac{Q_3 - Q_1}{|Q_3| + |Q_1|}$                   
-	\end{tblr}
-\end{table}
-
 
 All features are standardized, and magnitude and volatility features are weighted equally. Feature relevance is assessed using feature selection techniques and principal component analysis. The resulting window-level feature vectors are clustered separately per maneuver type. 
 
 Yarlagadda and Pawar \cite{yarlagadda_exploring_2022} performed a two level clustering analysis seperating magnitude and volatility features.  In this paper magnitude and volatility features are clustered together, which allows the model to learn characteristic couplings between riding intensity and variability, yielding a set of local riding regimes that are globally consistent.
 
-Each sliding window is then assigned a local riding regime corresponding to its cluster, producing a globally consistent segmentation of riding behavior. Cluster centers can be interpreted in the original feature units, facilitating analysis of characteristic riding patterns. Feature indices for magnitude and volatility are automatically managed to support both split and joint analyses.
+The windows are separated by scenario and clustered independently through the general clustering pipeline.
+
+Each sliding window is then assigned a local riding regime corresponding to its cluster, producing a globally consistent segmentation of riding behavior.
+
+
+Literature showed that the typical number of resulting local regimes is 2-3, but since this process is unsupervised and leaves room to find any number of clusters if this results in the best split. accordingly this and the following steps are generalized to any number of k for each scenario s.
 
 
 \subsection{Regime Aggregation and Maneuver-Level Representation}
 
-While prior work demonstrates that sequences of discrete behavioral regimes encode meaningful structural information, aggregation strategies are typically limited to summary statistics computed within predefined windows or embedded in probabilistic state-transition models. Unlike Hidden Markov or Markov Chain models \cite{pentland_modeling_1999} that assume data are generated by an underlying stochastic process, the present method directly summarizes observed regime sequences via proportions, run lengths and entropy measures \cite{vegetabile_estimating_2019}, capturing behavioral heterogeneity without imposing generative assumptions.
+While prior work demonstrates that sequences of discrete behavioral regimes encode meaningful structural information, aggregation strategies are typically limited to summary statistics computed within predefined windows or embedded in probabilistic state-transition models. 
+Similar local regime aggregation strategies have been applied by \citeauthor{bachir_identifying_2025} (\citeyear{bachir_identifying_2025}), who summarized riding behavior clusters using cluster proportion and transition frequency entropy measures to characterize the sequencial character of local regimes.
+Unlike Hidden Markov or Markov Chain models \cite{pentland_modeling_1999} that assume data are generated by an underlying stochastic process, the present method directly summarizes observed regime sequences via proportions, run lengths and entropy measures \cite{vegetabile_estimating_2019}, capturing behavioral heterogeneity without imposing generative assumptions.
 
 \paragraph{Fundamental Definitions.}
 
@@ -267,8 +428,26 @@ For each regime $r \in \mathcal{R}_m$, the mean and standard deviation of run le
 
 The mean run length captures behavioral persistence, while the standard deviation reflects fragmentation variability.
 
-\paragraph{Entropy Measures.}
+\paragraph{Temporal Center of Mass.} 
 
+To capture the temporal distribution of a regime within a maneuver, the normalized center of mass (COM) is computed. For a regime $r\in \mathcal{R}$ within scenario $s$, the normalized scenario-specific COM is defined as
+\[
+\text{COM}_r^{(s)} = 
+\frac{1}{T_m^{(s,r)}} 
+\sum_{t \in T_m \,:\, \tilde r_t = r \wedge s_t = s} \frac{t}{T_m^{(s)}},
+\]
+where $T_m^{(s,r)}$ is the number of windows in maneuver $m$ assigned to regime $r$ within scenario $s$, and $T_m^{(s)}$ is the total number of windows in $m$ occurring in scenario $s$. This measures the average temporal location of the regime within that scenario.
+
+For a regime $r$ across the entire maneuver, ignoring scenario splits, the normalized center of mass is
+\[
+\text{COM}_r^{(m)} = 
+\frac{1}{T_m^{(r)}} 
+\sum_{t \in T_m \,:\, \tilde r_t = r} \frac{t}{T_m},
+\]
+where $T_m^{(r)}$ is the total number of windows in $m$ assigned to regime $r$, and $T_m$ is the total number of windows in maneuver $m$. This captures the true temporal distribution of the regime throughout the maneuver.
+
+\paragraph{Entropy Measures.}
+Following \citeauthor{bachir_identifying_2025}, Shannon entropy is used to quantify behavioral variability and unpredictability across regime distributions.
 Global behavioral heterogeneity is quantified using normalized Shannon entropy:
 $$H_\text{global}(m) = \frac{1}{\log_2|\mathcal{R}_m|} \cdot - \sum_{r\in\mathcal{R}_m} P_m(r) \log_2 P_m(r)$$
 
@@ -294,26 +473,34 @@ H_{\text{global}}(m),
 \left\{
 	P_m(r),
 	\mu_r,
-	\sigma_r
+	\sigma_r,
+	\text{COM}_r^{(m)},
+	\text{COM}_r^{(s)}
 \right\}_{r \in\mathcal{R}}
 \Big).
 \]
 
-This representation jointly captures scenario exposure, regime composition, temporal persistence, and behavioral heterogeneity, forming the input for maneuver-level clustering.
+This representation jointly captures scenario exposure, regime composition, temporal persistence, and behavioral heterogeneity, forming the partial input for maneuver-level clustering.
 
 % introduce active passive split based on R_m > 1, and only in results. -> keep methodology unsupervised. active/passive would introduce supervised split!
+\subsection{Level 2: Maneuver Clustering}
 
+The aggregated regime feature set is joined with the maneuver specific feature set to create the maneuver feature set. All maneuvers of the same type are then clustered together using the general clustering pipeline.
 
 \subsection{Level 3: Infrastructure-Conditioned Analysis}
+
+two stages to analyze relation between learned clusters and environment: 
+1. window level
+2. maneuver level
+
+The scenario split enables a differentiated analysis of regimes through filtering by proportions of windows. 
 
 In this stage the goal is to find correlation between local regimes and traffic, infrastructure features.
 
 Exploratory comparison of cluster-specific feature distributions.
 
-Features describing the infrastructure and environment are incorporated at the window level \ref{meth:level1} in the feature vector. Each window inherits an infrastructure label corresponding to the road or path segment on which it occurs, while the regime definitions learned at Level 1 remain fixed. This makes the analysis of local riding behavior
+post-hoc descriptive comparison.
 
-For each maneuver, regime statistics are then computed separately for each infrastructure type, such as the proportion of time spent in each regime or regime transition patterns conditioned on infrastructure. This design enables a direct comparison of riding behavior across different infrastructures while preserving a common behavioral reference frame, which is essential for isolating infrastructure-induced adaptations from intrinsic riding style.
-features:
-distance to traffic light (not intersection because directly extractable from xodr) within 60 meters (first fixation of traffic light between 35 and 60m \cite{rupi_visual_2019})
-collision avoidance and lane deviation \cite{kuderer_learning_2015}
-traffic flow state key factor influencing style \cite{ren_lane-change_2025}
+Features describing the infrastructure and environment are incorporated at the window level \ref{meth:window-feature-set} in the feature vector. The regimes from level1 remain fixed, this makes the analysis of local riding behavior dependant on scenario-qualified regimes. this also enables the discovery of scenario effects and not solely regime correlation.
+
+For each maneuver, regime statistics are then aggregated across all windows. the simplest is aggregating mean and std of the feature sets.
