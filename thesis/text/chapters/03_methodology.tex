@@ -1,6 +1,10 @@
 \chapter{Methodology}
 
 \section{Objective}
+\begin{center}
+	\textbf{TODO Section: Objective}
+\end{center}
+\iffalse
 ML methodology contribution applied to traffic data, without making strong safety or infrastructure claims.
 A modular, multi-stage unsupervised clustering framework for hierarchical maneuver style discovery in trajectory data.
 Application domain: cyclist maneuvers.
@@ -11,7 +15,7 @@ Safety implications = exploratory, not causal.
 pipeline and stage design with modularity, swappable methods, and optimization in mind. this is more a concept than a full investigation of the idea and it can be extended or specialized at several places at each stage.
 
 The framework consists of three stages: maneuver extraction, local riding style clustering, maneuver level clustering and conditioned analysis. Each module was designed to ensure reproducibility, robustness and flexibility.
-
+\fi
 \section{Framework Overview}
 The framework consists of four stages: (1) maneuver extraction, (2) window-level regime identification, (3) maneuver-level aggregation and clustering, and (4) environment-conditioned interpretation.
 
@@ -145,7 +149,7 @@ For validated and complete maneuvers, the module extracts descriptive features \
 \section{Hierarchical Riding Style Identification}
 
 
-This section describes the hierarchical pipeline, which is applied to both maneuvers individually.
+This section describes the hierarchical multi-stage pipeline, which is applied to both maneuvers individually.
 
 \subsection{Window-Based Behavioral Representation}
 
@@ -253,6 +257,7 @@ This representation forms the input space for local regime discovery described i
 
 
 \subsection{General Clustering Pipeline}
+\label{meth:clustering-pipeline}
 This section describes the generalized unsupervised clustering pipeline used in both clustering stages. The procedure is domain-independent and modular, allowing individual components to be replaced without affecting the overall structure. The pipeline is intentionally restricted to standard, well-established methods to ensure interpretability, reproducibility and computational robustness.
 
 \begin{center}
@@ -365,38 +370,45 @@ Grid search was performed over feature-selection thresholds (correlation: 0.7–
 
 \paragraph{Model Selection \& Interpretation}
 The final configuration is selected based on stability distributions, cluster balance and practical interpretability of cluster centroids.
-Centroids are mapped back to the original feature space to support domain-level interpretation. Interpretability is prioritized over marginal improvement in geometric separation..
+Centroids are mapped back to the original feature space to support domain-level interpretation. Interpretability is prioritized over marginal improvement in geometric separation.
 
-\subsection{Level 1: Local Riding Behaviour (Window Level)}
+\subsection{Stage 1: Behavioral State Discovery}
 \label{meth:level1}
 
-All features are standardized, and magnitude and volatility features are weighted equally. Feature relevance is assessed using feature selection techniques and principal component analysis. The resulting window-level feature vectors are clustered separately per maneuver type. 
+Building upon established sliding-window segmentation approaches (Section \ref{rel:regimes}), the first abstraction layer formalizes local regime discovery as a clustering problem.
 
-Yarlagadda and Pawar \cite{yarlagadda_exploring_2022} performed a two level clustering analysis seperating magnitude and volatility features.  In this paper magnitude and volatility features are clustered together, which allows the model to learn characteristic couplings between riding intensity and variability, yielding a set of local riding regimes that are globally consistent.
+Let $\mathcal{W}_m = {w_1, \dots, w_{T_m}}$ denote the set of windows for maneuver $m$. Each window is associated with a scenario label $s_t \in S = {I, N}$ and feature representation $\mathbf{x}_t$.
 
-The windows are separated by scenario and clustered independently through the general clustering pipeline.
+Since behavioral variability differs substantially between scenarios, clustering is performed separately for each scenario:
+$$\mathcal{W}^{(s)} = \left\{w_t\in\mathcal{W}_m\mid s_t=s\right\}$$
+For each scenario $s$, the general clustering pipeline (Section \ref{meth:clustering-pipeline}) is applied to the riding-dynamics feature subset $\mathbf{x}_t^\text{riding}$.
 
-Each sliding window is then assigned a local riding regime corresponding to its cluster, producing a globally consistent segmentation of riding behavior.
+The clustering procedure yields $k_s$ scenario-specific regimes. Each window receives a regime assignment
+$$r_t^{(s)} \in\left\{1,\ldots,k_s\right\}$$.
+This produces a discrete regime sequence for $t\in T_m$
+$$\tilde{r}_t = \left(s_t,r_t^{(s_t)}\right)$$,
+which forms a globally consistent segmentation of riding behavior.
 
+The number of regimes is not fixed a priori but determined through stability-based model selection. While prior studies commonly report 2-3 regimes \cite{}, the framework remains fully unsupervised and permits any $k_s$ supported by structural stability and interpretability.
 
-Literature showed that the typical number of resulting local regimes is 2-3, but since this process is unsupervised and leaves room to find any number of clusters if this results in the best split. accordingly this and the following steps are generalized to any number of k for each scenario s.
-
+While prior work has focused on regime identification or probabilistic transition modeling, the present work introduces a second abstraction step that transforms regime sequences into maneuver-level representations.
 
 \subsection{Regime Aggregation and Maneuver-Level Representation}
+\label{meth:aggregation}
 
 While prior work demonstrates that sequences of discrete behavioral regimes encode meaningful structural information, aggregation strategies are typically limited to summary statistics computed within predefined windows or embedded in probabilistic state-transition models. 
 Similar local regime aggregation strategies have been applied by \citeauthor{bachir_identifying_2025} (\citeyear{bachir_identifying_2025}), who summarized riding behavior clusters using cluster proportion and transition frequency entropy measures to characterize the sequencial character of local regimes.
 Unlike Hidden Markov or Markov Chain models \cite{pentland_modeling_1999} that assume data are generated by an underlying stochastic process, the present method directly summarizes observed regime sequences via proportions, run lengths and entropy measures \cite{vegetabile_estimating_2019}, capturing behavioral heterogeneity without imposing generative assumptions.
 
 \paragraph{Fundamental Definitions.}
-
+\iffalse
 Let $m$ denote a maneuver consisting of $T_m$ time windows indexed by $t = 1, \dots, T_m$.  
 Each window is associated with a scenario label
 \[
 s_t \in S = \{I, N\},
 \]
 where $I$ denotes intersection and $N$ non-intersection.
-
+\fi
 For each scenario $s \in S$, regime clustering produces $k_s$ regimes.  
 A window $t$ belonging to scenario $s$ is assigned a regime label
 \[
@@ -529,27 +541,57 @@ H_{\text{global}}(m),
 \Big).
 \]
 
-This representation jointly captures scenario exposure, regime composition, temporal persistence, and behavioral heterogeneity, forming the partial input for maneuver-level clustering.
+This representation jointly captures scenario exposure, regime composition, temporal persistence and behavioral heterogeneity, forming the partial input for maneuver-level clustering.
 
-% introduce active passive split based on R_m > 1, and only in results. -> keep methodology unsupervised. active/passive would introduce supervised split!
-\subsection{Level 2: Maneuver Clustering}
+% introduce active passive split based on R_m > 1 and only in results. -> keep methodology unsupervised. active/passive would introduce supervised split!
+\subsection{Stage 2: Maneuver-Level Representation and Style Clustering}
+While Level 1 identifies local behavioral regimes, maneuvers themselves represent structured sequences of such regimes. The second abstraction layer therefore transforms regime sequences into maneuver-level representations.
 
-The aggregated regime feature set is joined with the maneuver specific feature set to create the maneuver feature set. All maneuvers of the same type are then clustered together using the general clustering pipeline.
+Rather than modeling transitions through generative assumptions (e.g., Hidden Markov Models \cite{pentland_modeling_1999}), the present approach summarizes observed regime sequences using descriptive statistics. This preserves interpretability and avoids assumptions about latent stochastic processes.
 
-\subsection{Level 3: Infrastructure-Conditioned Analysis}
+Given the regime sequence $\tilde{r}_{t=1}^{T_m}$ for maneuver $m$, the aggregation procedure (Section \ref{meth:aggregation}) computes:
+\begin{itemize}
+	\item Scenario exposure $P_m(s)$
+	\item Regime proportions $P_m(r)$
+	\item Run-length statistics $(\mu_r, \sigma_r)$
+	\item Temporal centers of mass $\text{COM}_r$
+	\item Entropy measures $H_{\text{global}}(m)$ and $H_s(m)$
+\end{itemize}
 
-two stages to analyze relation between learned clusters and environment: 
-1. window level
-2. maneuver level
+These quantities collectively define the regime-structure vector:
+$$\mathbf{z}_m^\text{regime}$$
 
-The scenario split enables a differentiated analysis of regimes through filtering by proportions of windows. 
+To incorporate maneuver-type-specific characteristics (e.g. geometric or interaction features), the regime representation is concatenated with the maneuver-specific descriptors vector $\mathbf{f}_M$:
+$$\mathbf{z}_m = \left(\mathbf{z}_m^\text{regime}, \mathbf{f}_M\right)$$
 
-In this stage the goal is to find correlation between local regimes and traffic, infrastructure features.
+All maneuvers of the same type are then clustered using the general clustering pipeline.
 
-Exploratory comparison of cluster-specific feature distributions.
+This second clustering stage identifies maneuver-level styles, representing distinct execution modes characterized by internal behavioral structure rather than isolated kinematic measurements.
 
-post-hoc descriptive comparison.
+\subsection{Stage 3: Infrastructure-Conditioned Analysis}
+The third stage evaluates how discovered regimes and maneuver-level styles relate to environment conditions. Clustering in Stages 1 and 2 is performed exclusively on behavioral features. Traffic and infrastructure variables are withheld from regime discovery to prevent environmental bias in behavioral abstraction.
 
-Features describing the infrastructure and environment are incorporated at the window level \ref{meth:window-feature-set} in the feature vector. The regimes from level1 remain fixed, this makes the analysis of local riding behavior dependant on scenario-qualified regimes. this also enables the discovery of scenario effects and not solely regime correlation.
+Two complementary analysis are carried out:
 
-For each maneuver, regime statistics are then aggregated across all windows. the simplest is aggregating mean and std of the feature sets.
+\paragraph{(1) Window-Level Analysis}
+Given fixed regime assignments $\tilde r_t$, traffic and infrastructure features are analyzed conditionally:
+$$\mathbb{E}[\mathbf{x}_t^{\text{traffic}} \mid \tilde r_t = r], 
+\quad 
+\mathbb{E}[\mathbf{x}_t^{\text{infra}} \mid \tilde r_t = r]
+$$
+This reveals how local behavioral regimes manifest under different contextual conditions.
+
+Because scenario labels are embedded in $\tilde r_t$, regime-context relations can be analyzed within and across scenarios.
+
+\paragraph{(2) Maneuver-Level Analysis}
+At the maneuver level, cluster-specific distributions of traffic and infrastructure descriptors are compared:
+$$
+\mathbb{E}[\mathbf{x}_m^{\text{traffic}} \mid c_m = k]
+\quad
+\mathbb{E}[\mathbf{x}_m^{\text{infra}} \mid c_m = k]
+$$
+where $c_m$ denotes the maneuver cluster label.
+
+Analysis is exploratory and descriptive. Differences in means and dispersion are examined to identify systematic associations between maneuver styles and contextual exposure. 
+
+No causal claims are made. The objective is characterization rather than inference.
