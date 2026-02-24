@@ -86,10 +86,12 @@ class WindowRecord:
   meta: ManeuverMeta
   t_start: float
   t_end: float
+  scenario: Optional[str] = None
+  local_regime: Optional[int] = None
+
   riding: Optional[RidingFeatures] = None
   traffic: Optional[TrafficFeatures] = None
   infrastructure: Optional[InfrastructureFeatures] = None
-  local_regime: Optional[int] = None
 
   def flatten(self) -> dict:
     """
