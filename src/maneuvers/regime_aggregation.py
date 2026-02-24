@@ -1,9 +1,9 @@
+import numpy as np
+
 from math import log2
 from typing import Dict, Tuple, List, Optional
 from dataclasses import dataclass
 from collections import defaultdict, Counter
-
-import numpy as np
 
 from maneuvers.base import Maneuver, WindowRecord
 
@@ -160,21 +160,21 @@ class RegimeAggregator:
       std_run = lengths.std() if len(lengths) > 1 else 0.0
 
       # COM global
-      com_global = np.mean([pos/n_total for pos in positions_global[r]]) if positions_global[r] else None
+      com_global = float(np.mean([pos/n_total for pos in positions_global[r]])) if positions_global[r] else None
 
       # COM scenario
       s = r[0]
       pos_scenario = positions_by_scenario[s][r]
       T_s = len([x for x in sequence if x[0] == s])
-      com_scenario = np.mean([p / T_s for p in pos_scenario]) if pos_scenario else None
+      com_scenario = float(np.mean([p / T_s for p in pos_scenario])) if pos_scenario else None
 
       regime_stats[r] = RegimeStats(
         regime_type=r,
         proportion=proportion,
         mean_run_length=mean_run,
         std_run_length=std_run,
-        com_global=float(com_global),
-        com_scenario=float(com_scenario)
+        com_global=com_global,
+        com_scenario=com_scenario
       )
 
     return regime_stats
