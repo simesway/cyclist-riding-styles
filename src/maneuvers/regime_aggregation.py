@@ -152,21 +152,22 @@ class RegimeAggregator:
     regime_stats: Dict[RegimeType, RegimeStats] = {}
 
     for r, count_r in counts.items():
-      proportion = count_r / n_total
+      count_s = sum(1 for x in sequence if x[0] == r[0])
+      proportion = count_r / count_s
 
       # run length stats
       lengths = np.array(run_lengths[r])
-      mean_run = lengths.mean() if len(lengths) > 0 else 0.0
-      std_run = lengths.std() if len(lengths) > 1 else 0.0
+      mean_run = float(lengths.mean()) if len(lengths) > 0 else 0.0
+      std_run = float(lengths.std()) if len(lengths) > 1 else 0.0
 
       # COM global
-      com_global = float(np.mean([pos/n_total for pos in positions_global[r]])) if positions_global[r] else None
+      com_global = float(np.mean([pos/(n_total-1) for pos in positions_global[r]])) if positions_global[r] else None
 
       # COM scenario
       s = r[0]
       pos_scenario = positions_by_scenario[s][r]
       T_s = len([x for x in sequence if x[0] == s])
-      com_scenario = float(np.mean([p / T_s for p in pos_scenario])) if pos_scenario else None
+      com_scenario = float(np.mean([p / (T_s-1) for p in pos_scenario])) if pos_scenario and T_s else 0.0
 
       regime_stats[r] = RegimeStats(
         regime_type=r,
