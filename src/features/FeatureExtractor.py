@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 
 from abc import ABC, abstractmethod
+from scipy.stats import entropy
 from typing import Generic, TypeVar, List
 
 import trafficfeatures.instant as inst
@@ -283,10 +284,18 @@ class InfrastructureFeatureExtractor(FeatureExtractor[InfrastructureFeatures]):
     return df
 
   def extract(self, df, **_) -> InfrastructureFeatures:
+    counts = df["road_type"].value_counts(normalize=True)
+    lane_type_entropy = float(entropy(counts, base=2))
+
+    hist, _ = np.histogram(df["lane_width"].to_numpy(), bins="auto", density=True)
+    prob = hist / hist.sum()
+    lane_width_entropy = float(entropy(prob, base=2))
+
     return InfrastructureFeatures(
       p_on_motorway=float(df["on_motorway"].mean()),
       p_on_bikelane=float(df["on_bikelane"].mean()),
       p_on_sidewalk=float(df["on_sidewalk"].mean()),
+      lane_type_entropy=lane_type_entropy,
 
       offset_lane_center=float(df["offset_lane_center"].mean()),
       rel_offset_lane_center=float(df["rel_offset_lane_center"].mean()),
@@ -296,6 +305,7 @@ class InfrastructureFeatureExtractor(FeatureExtractor[InfrastructureFeatures]):
       min_lateral_clearance=float(df["min_lateral_clearance"].mean()),
       max_lateral_clearance=float(df["max_lateral_clearance"].mean()),
       lane_width=float(df["lane_width"].mean()),
+      lane_width_entropy=lane_width_entropy,
 
       distance_traffic_light=float(df["distance_traffic_light"].mean()),
       distance_regulatory_sign=float(df["distance_regulatory_sign"].mean()),

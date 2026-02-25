@@ -109,6 +109,7 @@ class InfrastructureFeatures:
   p_on_motorway: float
   p_on_bikelane: float
   p_on_sidewalk: float
+  lane_type_entropy: float
 
   offset_lane_center: float
   rel_offset_lane_center: float
@@ -118,6 +119,7 @@ class InfrastructureFeatures:
   min_lateral_clearance: float
   max_lateral_clearance: float
   lane_width: float
+  lane_width_entropy: float
 
   # other features
   distance_traffic_light: float
