@@ -78,7 +78,5 @@ def rotation_fluctuation_signal(df: pd.DataFrame) -> np.ndarray:
   Volatility (e.g. MAD) is computed later over a maneuver window.
   """
   yaw = np.unwrap(df["rotation_z"].to_numpy())
-  if len(yaw) == 0:
-    return np.ndarray([])
   dyaw = np.diff(yaw, prepend=yaw[0])
-  return dyaw
+  return np.arctan2(np.sin(dyaw), np.cos(dyaw))

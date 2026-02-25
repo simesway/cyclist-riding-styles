@@ -42,6 +42,26 @@ class NullExtractor(FeatureExtractor[None]):
 
 
 class RidingFeatureExtractor(FeatureExtractor[RidingFeatures]):
+  @staticmethod
+  def is_straight_segment(df: pd.DataFrame, max_dev=0.05, min_length=1.0) -> bool:
+    """Implementation of Bachir and Weikl rotation fluctuation straight segment check"""
+    x = df["translation_x"].to_numpy()
+    y = df["translation_y"].to_numpy()
+
+    dx = x[-1] - x[0]
+    dy = y[-1] - y[0]
+    length = np.sqrt(dx ** 2 + dy ** 2)
+    if length < min_length:
+      return False
+
+    a = dy
+    b = -dx
+    c = dx * y[0] - dy * x[0]
+
+    dist = np.abs(a * x + b * y + c) / np.sqrt(a * a + b * b)
+
+    return np.max(dist) < max_dev
+
   def prepare(self, df, maneuver: Maneuver) -> pd.DataFrame:
     df["velocity"] = inst.magnitude(df, ["velocity_x", "velocity_y"])
     df["acceleration"] = inst.magnitude(df, ["acceleration_x", "acceleration_y"])
@@ -52,7 +72,17 @@ class RidingFeatureExtractor(FeatureExtractor[RidingFeatures]):
   def extract(self, df: pd.DataFrame, **_) -> RidingFeatures:
     speed = stats_basic(df, "velocity")
     acc = stats_basic(df, "long_acc") # added in WindowBuilder.infer_features
-    rot_fluc = stats_basic(df, "rot_fluc")
+
+    if not self.is_straight_segment(df):
+      rot_fluc_mad = np.nan
+      rot_fluc_std = np.nan
+      rot_fluc_max_abs = np.nan
+    else:
+      rot_stats = stats_basic(df, "rot_fluc")
+      rot_fluc_mad = float(rot_stats["mad"])
+      rot_fluc_std = float(rot_stats["std"])
+      rot_fluc_max_abs = float(max_abs(df["rot_fluc"].to_numpy()))
+
     return RidingFeatures(
       speed_max=float(speed["max"]),
       speed_min=float(speed["min"]),
@@ -66,9 +96,9 @@ class RidingFeatureExtractor(FeatureExtractor[RidingFeatures]):
       acc_std=float(acc["std"]),
       acc_mad=float(acc["mad"]),
       acc_qcv=float(acc["qcv"]),
-      rot_fluc_mad=float(rot_fluc["mad"]),
-      rot_fluc_std=float(rot_fluc["std"]),
-      rot_fluc_max_abs=float(max_abs(df["rot_fluc"].to_numpy()))
+      rot_fluc_mad=rot_fluc_mad,
+      rot_fluc_std=rot_fluc_std,
+      rot_fluc_max_abs=rot_fluc_max_abs
     )
 
 class TrafficFeatureExtractor(FeatureExtractor[TrafficFeatures]):
