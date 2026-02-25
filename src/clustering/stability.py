@@ -5,7 +5,7 @@ from tqdm import tqdm
 from typing import Tuple
 from dataclasses import dataclass
 
-from sklearn.metrics import adjusted_rand_score, silhouette_score
+from sklearn.metrics import adjusted_rand_score, silhouette_score, davies_bouldin_score, calinski_harabasz_score
 
 
 @dataclass
@@ -23,13 +23,13 @@ class RegimeStabilityTester:
       noise_scale: float = 0.05,
       subsample_frac: float = 0.8,
       random_state: int | None = None,
-      silhouette_subsample_frac: float = 0.8,
+      metric_subsample_frac: float = 0.8,
   ):
     self.clusterer_factory = clusterer_factory
     self.noise_scale = noise_scale
     self.subsample_frac = subsample_frac
     self.random_state = random_state
-    self.silhouette_subsample_frac = silhouette_subsample_frac
+    self.metric_subsample_frac = metric_subsample_frac
     self.results = None
 
   def run(self, X: np.ndarray, labels_ref: np.ndarray, sub_idx, scale, seed: int) -> StabilityResult:
@@ -65,7 +65,7 @@ class RegimeStabilityTester:
 
     return StabilityResult(ari_sub, ari_seed, ari_noise, min_cluster_frac)
 
-  def run_repeated(self, X: np.ndarray, n_runs: int = 30, pbar=True) -> Tuple[pd.DataFrame, float]:
+  def run_repeated(self, X: np.ndarray, n_runs: int = 30, pbar=True) -> Tuple[pd.DataFrame, pd.DataFrame]:
     records = []
 
     rng     = np.random.default_rng(self.random_state)
@@ -86,15 +86,25 @@ class RegimeStabilityTester:
 
     self.results = df
 
-    sil_rng = np.random.default_rng(self.random_state + 1 if self.random_state is not None else 1)
-    sil_idx = sil_rng.choice(len(X), int(self.silhouette_subsample_frac * len(X)), replace=False)
+    sub_rng = np.random.default_rng(self.random_state + 1 if self.random_state is not None else 1)
+    sub_idx = sub_rng.choice(len(X), int(self.metric_subsample_frac * len(X)), replace=False)
 
     silhouette = (
-      silhouette_score(X[sil_idx], labels_ref[sil_idx])
+      silhouette_score(X[sub_idx], labels_ref[sub_idx])
       if len(set(labels_ref)) > 1 else np.nan
     )
 
-    metrics = pd.DataFrame({
+    davies_bouldin = (
+      davies_bouldin_score(X[sub_idx], labels_ref[sub_idx])
+      if len(set(labels_ref)) > 1 else np.nan
+    )
+
+    calinski_harabasz = (
+      calinski_harabasz_score(X[sub_idx], labels_ref[sub_idx])
+      if len(set(labels_ref)) > 1 else np.nan
+    )
+
+    stability = pd.DataFrame({
       "metric": df.columns,
       "median": df.median().values,
       "mean": df.mean().values,
@@ -103,6 +113,11 @@ class RegimeStabilityTester:
       "p90": df.quantile(0.90).values,
     })
 
-    return metrics, silhouette
+    metric = pd.DataFrame({
+      "metric": ["silhouette", "davies_bouldin", "calinski_harabasz"],
+      "value": [silhouette, davies_bouldin, calinski_harabasz]
+    })
+
+    return stability, metric
 
 
