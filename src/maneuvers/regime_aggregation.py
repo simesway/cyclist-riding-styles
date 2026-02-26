@@ -1,42 +1,11 @@
 import numpy as np
 
 from math import log2
-from typing import Dict, Tuple, List, Optional
-from dataclasses import dataclass
+from typing import Dict, List
 from collections import defaultdict, Counter
 
-from maneuvers.base import Maneuver, WindowRecord
-
-ScenarioType = str
-RegimeType = Tuple[ScenarioType, int]
-
-
-@dataclass
-class ScenarioStats:
-  scenario: ScenarioType
-  exposure: float
-  entropy: float
-
-@dataclass
-class RegimeStats:
-  regime_type: RegimeType
-  proportion: float
-  mean_run_length: float
-  std_run_length: float
-  com_global: Optional[float]
-  com_scenario: Optional[float]
-
-
-@dataclass
-class RegimeAggregation:
-  maneuver_id: int
-  n_windows: int
-
-  global_entropy: float
-
-  scenario_stats: Dict[ScenarioType, ScenarioStats]
-  regime_stats: Dict[RegimeType, RegimeStats]
-
+from maneuvers.base import Maneuver, WindowRecord, ScenarioType, RegimeType, ScenarioStats, RegimeStats, \
+  RegimeAggregation
 
 
 class RegimeAggregator:

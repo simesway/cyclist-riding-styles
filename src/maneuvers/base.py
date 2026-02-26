@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from collections import defaultdict
 from dataclasses import dataclass, asdict
-from typing import Optional, Literal, List
+from typing import Optional, Literal, List, Tuple, Dict
 
 from data.utils import apply_time_window
 from features.base import RidingFeatures, TrafficFeatures, InfrastructureFeatures, RegimeAggregation, FollowingFeatures, \
@@ -10,6 +10,8 @@ from maneuvers.utils import flatten_optional
 
 
 ManeuverType = Literal["interaction", "following", "overtaking"]
+ScenarioType = str
+RegimeType = Tuple[ScenarioType, int]
 
 @dataclass(eq=False, kw_only=True)
 class Maneuver(ABC):
@@ -142,3 +144,30 @@ class ManeuverSlicer:
     ego_traj = traj_df[traj_df["track_id"].isin(ids)]
     ego_traj = ego_traj.sort_values("timestamp")
     return apply_time_window(ego_traj, maneuver.t_start, maneuver.t_end)
+
+
+
+@dataclass
+class ScenarioStats:
+  scenario: ScenarioType
+  exposure: float
+  entropy: float
+
+
+@dataclass
+class RegimeStats:
+  regime_type: RegimeType
+  proportion: float
+  mean_run_length: float
+  std_run_length: float
+  com_global: Optional[float]
+  com_scenario: Optional[float]
+
+
+@dataclass
+class RegimeAggregation:
+  maneuver_id: int
+  n_windows: int
+  global_entropy: float
+  scenario_stats: Dict[ScenarioType, ScenarioStats]
+  regime_stats: Dict[RegimeType, RegimeStats]
