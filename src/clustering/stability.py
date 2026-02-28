@@ -65,7 +65,7 @@ class RegimeStabilityTester:
 
     return StabilityResult(ari_sub, ari_seed, ari_noise, min_cluster_frac)
 
-  def run_repeated(self, X: np.ndarray, n_runs: int = 30, pbar=True) -> Tuple[pd.DataFrame, pd.DataFrame]:
+  def run_repeated(self, X: np.ndarray, n_runs: int = 30, pbar=True) -> Tuple[pd.DataFrame, dict]:
     records = []
 
     rng     = np.random.default_rng(self.random_state)
@@ -113,11 +113,8 @@ class RegimeStabilityTester:
       "p90": df.quantile(0.90).values,
     })
 
-    metric = pd.DataFrame({
-      "metric": ["silhouette", "davies_bouldin", "calinski_harabasz"],
-      "value": [silhouette, davies_bouldin, calinski_harabasz]
-    })
+    metrics = {"silhouette": silhouette, "davies_bouldin": davies_bouldin, "calinski_harabasz": calinski_harabasz}
 
-    return stability, metric
+    return stability, metrics
 
 

@@ -25,7 +25,7 @@ def grid_search(
   getter,
   param_grid,
   subsample_frac=1.0,
-  silhouette_subsample=0.8,
+  metric_subsample_frac=0.8,
   n_runs=5,
   seed=0
 ):
@@ -53,33 +53,35 @@ def grid_search(
         clusterer=KMeansClusterer(k=k),
       )
 
-      metrics, silhouette = pipeline.stability_test(
+      stability, metrics = pipeline.stability_test(
         data,
         subsample_frac=subsample_frac,
-        silhouette_subsample=silhouette_subsample,
+        metric_subsample_frac=metric_subsample_frac,
         n_runs=n_runs,
         pbar=False, seed=seed
       )
       ex_var = pipeline.pca.explained_variance()
 
-      ari_subsample_median = metrics.loc[metrics.metric == "ari_subsample", "median"].iloc[0]
-      ari_noise_median = metrics.loc[metrics.metric == "ari_noise", "median"].iloc[0]
-      ari_seed_median = metrics.loc[metrics.metric == "ari_seed", "median"].iloc[0]
+      ari_subsample_median = stability.loc[stability.metric == "ari_subsample", "median"].iloc[0]
+      ari_noise_median = stability.loc[stability.metric == "ari_noise", "median"].iloc[0]
+      ari_seed_median = stability.loc[stability.metric == "ari_seed", "median"].iloc[0]
 
       results.append({
         "corr_threshold": corr,
         "vif_threshold": vif,
         "k": k,
         "components": comp,
-        "silhouette": silhouette,
+        "silhouette": metrics["silhouette"],
+        "davies-bouldin": metrics["davies_bouldin"],
+        "calinski_harabasz": metrics["calinski_harabasz"],
         "ari_subsample": ari_subsample_median,
         "ari_noise": ari_noise_median,
         "ari_seed": ari_seed_median,
-        "min_cluster_frac_median": metrics.loc[
-          metrics.metric == "min_cluster_frac", "median"
+        "min_cluster_frac_median": stability.loc[
+          stability.metric == "min_cluster_frac", "median"
         ].iloc[0],
-        "min_cluster_frac_std": metrics.loc[
-          metrics.metric == "min_cluster_frac", "std"
+        "min_cluster_frac_std": stability.loc[
+          stability.metric == "min_cluster_frac", "std"
         ].iloc[0],
         "explained_variance": sum(ex_var),
         "num_components": len(ex_var)

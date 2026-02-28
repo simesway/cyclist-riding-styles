@@ -67,12 +67,12 @@ class ClusteringPipeline:
       self,
       items: Iterable,
       subsample_frac: float=0.8,
-      silhouette_subsample: float=0.8,
+      metric_subsample_frac: float=0.8,
       noise_scale: float=0.1,
       n_runs: int=30,
       pbar: bool=True,
       seed: int=0
-  ) -> Tuple[pd.DataFrame, float]:
+  ) -> Tuple[pd.DataFrame, dict]:
     X, ws = self.builder.to_numpy(items)
 
     if len(ws) == 0:
@@ -94,7 +94,7 @@ class ClusteringPipeline:
       noise_scale=noise_scale,
       subsample_frac=subsample_frac,
       random_state=seed,
-      silhouette_subsample_frac=silhouette_subsample
+      metric_subsample_frac=metric_subsample_frac
     )
 
     return tester.run_repeated(X_scaled, n_runs=n_runs, pbar=pbar)
