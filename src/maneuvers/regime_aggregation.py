@@ -130,13 +130,19 @@ class RegimeAggregator:
       std_run = float(lengths.std()) if len(lengths) > 1 else 0.0
 
       # COM global
-      com_global = float(np.mean([pos/(n_total-1) for pos in positions_global[r]])) if positions_global[r] else None
+      if positions_global[r] and n_total > 1:
+        com_global = float(np.mean([pos / (n_total-1) for pos in positions_global[r]]))
+      else:
+        com_global = 0.0
 
       # COM scenario
       s = r[0]
       pos_scenario = positions_by_scenario[s][r]
       T_s = len([x for x in sequence if x[0] == s])
-      com_scenario = float(np.mean([p / (T_s-1) for p in pos_scenario])) if pos_scenario and T_s else 0.0
+      if pos_scenario and T_s > 1:
+        com_scenario = float(np.mean([p / (T_s-1) for p in pos_scenario]))
+      else:
+        com_scenario = 0.0
 
       regime_stats[r] = RegimeStats(
         regime_type=r,
