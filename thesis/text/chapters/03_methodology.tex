@@ -151,6 +151,123 @@ For validated and complete maneuvers, the module extracts descriptive features \
 
 This section describes the hierarchical multi-stage pipeline, which is applied to both maneuvers individually.
 
+\subsection{General Clustering Pipeline}
+\label{meth:clustering-pipeline}
+This section describes the generalized unsupervised clustering pipeline used in both clustering stages. The procedure is domain-independent and modular, allowing individual components to be replaced without affecting the overall structure. The pipeline is intentionally restricted to standard, well-established methods to ensure interpretability, reproducibility and computational robustness.
+
+\begin{center}
+	\textbf{Missing Figure: Visualization of General Clustering Pipeline}
+\end{center}
+
+\paragraph{Feature Filtering}
+
+To control multicollinearity and reduce redundancy, an iterative backward filtering procedure is applied.
+
+First, features with high pairwise absolute correlation are removed. For each correlated pair exceeding a predefined threshold, the feature with the larger average correlation to all remaining features is discarded \cite{guyon_introduction_2003}.
+
+Second, multicollinearity is further mitigated using the Variance Inflation Factor (VIF). Among features exceeding the VIF threshold, the feature withe the largest value is removed \cite{cheng_variable_2022}. 
+
+Both steps are repeated until all features satisfy the specified thresholds. The resulting feature matrix is standardized prior to dimensionality reduction.
+\paragraph{Dimensionality Reduction}
+
+Principal Component Analysis (PCA) is applied to obtain an orthogonal low-dimensional representation of the filtered feature space.
+
+Dimensionality is determined via an explained variance threshold. Whitening is applied to normalize component variance, ensuring isotropic scaling in the transformed space.
+
+Clustering is performed in PCA space.
+
+\paragraph{Clustering}
+
+Partition-based clustering is performed using K-means.
+
+K-means was selected because:
+\begin{itemize}
+	\item It provides stable centroid-based partitions
+	\item It scales efficiently to large datasets
+	\item It yields directly interpretable cluster prototypes
+	\item Preliminary experiments showed no consistent advantage of density-b
+\end{itemize}
+Clustering is repeated with multiple random initializations to mitigate local minima effects.
+
+While Gaussian Mixture Models and DBSCAN were considered, preliminary experiments indicated that K-means achieved comparable or better separation of micro-behavioral regimes on the current trajectory features.
+\iffalse
+While Gaussian Mixture Models and DBSCAN were considered, preliminary experiments indicated that K-means achieved comparable or better separation of micro-behavioral regimes on the current trajectory features, with lower computational cost and fewer hyperparameters. As such, K-means was selected as the primary clustering algorithm for all stages, providing a robust and interpretable baseline for multi-stage aggregation.
+\fi
+
+\paragraph{Clustering Stability}
+Since no ground truth labels are available, robustness under perturbation is used as the primary reliability criterion.
+
+Clustering stability is quantified using the Adjusted Rand Index (ARI) under three perturbation mechanism:
+\begin{itemize}
+	\item \textbf{Subsample stability:} Clustering is recomputed on repeated 80\% subsamples. ARI is computed relative to the reference clustering restricted to the same subset
+	\item \textbf{Initialization stability:} Independent runs with different random seeds are compared
+	\item \textbf{Noise stability:} Additive Gaussian noise scaled by feature-wise standard deviation is applied before reclustering.
+\end{itemize}
+
+Each stability measure is repeated across multiple runs. Median, mean, standard deviation and quantiles of ARI are reported.
+
+Stability is interpreted as robustness of the partition under data and algorithmic perturbation rather than as a performance metric.
+
+\iffalse
+Following the notion of clustering stability as robustness under data and algorithmic perturbations (von Luxburg, 2010) \cite{luxburg_clustering_2010}, clustering stability was assessed using the Adjusted Rand Index (ARI) under subsampling, random initialization, and additive noise.
+
+For subsampling stability, a random subset comprising 80\% of the data was drawn without replacement. The clustering algorithm was refit on this subset, and ARI was computed between the resulting labels and the reference labels restricted to the same subset. To detect degenerate solutions, the minimum cluster fraction within each subsample was additionally recorded.
+
+For seed stability, two clusterings were fit on the full dataset using different random initializations, and ARI was computed directly between their label assignments.
+
+For noise stability, additive Gaussian noise was applied to the full dataset, with noise scaled per feature by its empirical standard deviation. The clustering algorithm was refit on the perturbed data, and ARI was computed relative to the reference clustering.
+
+Each stability measure was repeated across multiple runs with independent random seeds. Stability was summarized using the median, mean, standard deviation, and the 10th and 90th percentiles of the ARI distributions. Cases resulting in a single cluster were treated as undefined.
+
+Clustering quality was assessed separately using the silhouette score, computed once on a random subsample of the data using the reference clustering.
+
+\fi
+
+\paragraph{Internal Validity}
+Geometric seperation is evaluated using the Silhouette score. Cluster balance is monitored by tracking the minimum relative cluster size across repetitions.
+
+Given the exploratory and hierarchical nature of the framework, geometric optimality is treated as secondary to structural stability and interpretability.
+
+\paragraph{Grid Search}
+A grid search is conducted over:
+
+\begin{table}[h]
+	\begin{tabular}{ll}
+		Hyperparameter           & Search range                           \\
+		correlation threshold    & $[0.7, 0.75, 0.8, 0.85, 0.9, 0.95, 1]$ \\
+		vif threshold            & $[3, 5, 10, 50, 100, 1000]$            \\
+		PCA - explained variance & $[60\%, 70\%, 80\% 90\%, 95\%]$        \\
+		k                        & $[2, 3, 4, 5]$                        
+	\end{tabular}
+\end{table}
+
+For each configuration median stability and validity measures are reported.
+The search aims to identify configurations that jointly satisfy:
+\begin{itemize}
+	\item Stability under perturbation
+	\item Acceptable geometric seperation
+	\item Plausible cluster sizes
+	\item Interpretability of cluster centroids
+\end{itemize}
+
+Stability serves as a robustness indicator rather than a strict optimization objective.
+
+\iffalse
+A grid search was conducted over feature-selection thresholds (correlation and variance inflation factor), PCA dimensionality, and the number of clusters to identify configurations that yield both interpretable and stable cluster structures.
+
+For each hyperparameter combination, features were selected, dimensionality was reduced using PCA, and KMeans clustering was applied. Clustering stability was assessed over multiple runs using repeated subsampling and perturbations. Specifically, clustering was repeated n times on an 80\% stratified subsample of the data, and stability was quantified using the Adjusted Rand Index (ARI) under three conditions: variation due to subsampling, random noise, and random initialization. It was used as a robustness indicator rather than a strict selection criterion \cite{ben-david_sober_2006}, with interpretability guiding the final choice of clusters.
+
+Clustering quality was evaluated using the silhouette score computed on a subsample to reduce bias, while cluster balance was enforced by tracking the minimum relative cluster size across runs. For each metric, median values and variability were reported to obtain robust estimates and reduce sensitivity to outliers. This procedure allows selecting hyperparameters that balance clustering quality, stability, and cluster size constraints while mitigating overfitting. Using medians over repeated runs reduces the influence of stochastic variation inherent to KMeans and subsampling. 
+
+Grid search was performed over feature-selection thresholds (correlation: 0.7–0.95, VIF: 3–100), PCA dimensionality (explained variance: 60–95\%), and the number of clusters k (2–5) to identify configurations that yield both interpretable and stable cluster structures.
+\fi
+
+
+\paragraph{Model Selection \& Interpretation}
+The final configuration is selected based on stability distributions, cluster balance and practical interpretability of cluster centroids.
+Centroids are mapped back to the original feature space to support domain-level interpretation. Interpretability is prioritized over marginal improvement in geometric separation.
+
+
 \subsection{Window-Based Behavioral Representation}
 
 The first stage of the hierarchical pipeline consists of segmenting each maneuver into short-term temporal windows and extracting descriptive features that characterize local riding behavior. This approach operationalizes the concept of micro-behavioral states, which capture short term variations in rider dynamics while preserving temporal continuity \cite{li_volatility-based_2025, bachir_identifying_2025, mohammadnazar_classifying_2021}.
@@ -256,121 +373,6 @@ $$\mathcal{W}_m=\{w_1, \ldots,w_{T_m}\}.$$
 This representation forms the input space for local regime discovery described in the subsequent section.
 
 
-\subsection{General Clustering Pipeline}
-\label{meth:clustering-pipeline}
-This section describes the generalized unsupervised clustering pipeline used in both clustering stages. The procedure is domain-independent and modular, allowing individual components to be replaced without affecting the overall structure. The pipeline is intentionally restricted to standard, well-established methods to ensure interpretability, reproducibility and computational robustness.
-
-\begin{center}
-	\textbf{Missing Figure: Visualization of General Clustering Pipeline}
-\end{center}
-
-\paragraph{Feature Filtering}
-
-To control multicollinearity and reduce redundancy, an iterative backward filtering procedure is applied.
-
-First, features with high pairwise absolute correlation are removed. For each correlated pair exceeding a predefined threshold, the feature with the larger average correlation to all remaining features is discarded \cite{guyon_introduction_2003}.
-
-Second, multicollinearity is further mitigated using the Variance Inflation Factor (VIF). Among features exceeding the VIF threshold, the feature withe the largest value is removed \cite{cheng_variable_2022}. 
-
-Both steps are repeated until all features satisfy the specified thresholds. The resulting feature matrix is standardized prior to dimensionality reduction.
-\paragraph{Dimensionality Reduction}
-
-Principal Component Analysis (PCA) is applied to obtain an orthogonal low-dimensional representation of the filtered feature space.
-
-Dimensionality is determined via an explained variance threshold. Whitening is applied to normalize component variance, ensuring isotropic scaling in the transformed space.
-
-Clustering is performed in PCA space.
-
-\paragraph{Clustering}
-
-Partition-based clustering is performed using K-means.
-
-K-means was selected because:
-\begin{itemize}
-	\item It provides stable centroid-based partitions
-	\item It scales efficiently to large datasets
-	\item It yields directly interpretable cluster prototypes
-	\item Preliminary experiments showed no consistent advantage of density-b
-\end{itemize}
-Clustering is repeated with multiple random initializations to mitigate local minima effects.
-
-While Gaussian Mixture Models and DBSCAN were considered, preliminary experiments indicated that K-means achieved comparable or better separation of micro-behavioral regimes on the current trajectory features.
-\iffalse
-While Gaussian Mixture Models and DBSCAN were considered, preliminary experiments indicated that K-means achieved comparable or better separation of micro-behavioral regimes on the current trajectory features, with lower computational cost and fewer hyperparameters. As such, K-means was selected as the primary clustering algorithm for all stages, providing a robust and interpretable baseline for multi-stage aggregation.
-\fi
-
-\paragraph{Clustering Stability}
-Since no ground truth labels are available, robustness under perturbation is used as the primary reliability criterion.
-
-Clustering stability is quantified using the Adjusted Rand Index (ARI) under three perturbation mechanism:
-\begin{itemize}
-	\item \textbf{Subsample stability:} Clustering is recomputed on repeated 80\% subsamples. ARI is computed relative to the reference clustering restricted to the same subset
-	\item \textbf{Initialization stability:} Independent runs with different random seeds are compared
-	\item \textbf{Noise stability:} Additive Gaussian noise scaled by feature-wise standard deviation is applied before reclustering.
-\end{itemize}
-
-Each stability measure is repeated across multiple runs. Median, mean, standard deviation and quantiles of ARI are reported.
-
-Stability is interpreted as robustness of the partition under data and algorithmic perturbation rather than as a performance metric.
-
-\iffalse
-Following the notion of clustering stability as robustness under data and algorithmic perturbations (von Luxburg, 2010) \cite{luxburg_clustering_2010}, clustering stability was assessed using the Adjusted Rand Index (ARI) under subsampling, random initialization, and additive noise.
-
-For subsampling stability, a random subset comprising 80\% of the data was drawn without replacement. The clustering algorithm was refit on this subset, and ARI was computed between the resulting labels and the reference labels restricted to the same subset. To detect degenerate solutions, the minimum cluster fraction within each subsample was additionally recorded.
-
-For seed stability, two clusterings were fit on the full dataset using different random initializations, and ARI was computed directly between their label assignments.
-
-For noise stability, additive Gaussian noise was applied to the full dataset, with noise scaled per feature by its empirical standard deviation. The clustering algorithm was refit on the perturbed data, and ARI was computed relative to the reference clustering.
-
-Each stability measure was repeated across multiple runs with independent random seeds. Stability was summarized using the median, mean, standard deviation, and the 10th and 90th percentiles of the ARI distributions. Cases resulting in a single cluster were treated as undefined.
-
-Clustering quality was assessed separately using the silhouette score, computed once on a random subsample of the data using the reference clustering.
-\fi
-
-\paragraph{Internal Validity}
-Geometric seperation is evaluated using the Silhouette score. Cluster balance is monitored by tracking the minimum relative cluster size across repetitions.
-
-Given the exploratory and hierarchical nature of the framework, geometric optimality is treated as secondary to structural stability and interpretability.
-
-\paragraph{Grid Search}
-A grid search is conducted over:
-
-\begin{table}[h]
-	\begin{tabular}{ll}
-		Hyperparameter           & Search range                           \\
-		correlation threshold    & $[0.7, 0.75, 0.8, 0.85, 0.9, 0.95, 1]$ \\
-		vif threshold            & $[3, 5, 10, 50, 100, 1000]$            \\
-		PCA - explained variance & $[60\%, 70\%, 80\% 90\%, 95\%]$        \\
-		k                        & $[2, 3, 4, 5]$                        
-	\end{tabular}
-\end{table}
-
-For each configuration median stability and validity measures are reported.
-The search aims to identify configurations that jointly satisfy:
-\begin{itemize}
-	\item Stability under perturbation
-	\item Acceptable geometric seperation
-	\item Plausible cluster sizes
-	\item Interpretability of cluster centroids
-\end{itemize}
-
-Stability serves as a robustness indicator rather than a strict optimization objective.
-
-
-\iffalse
-A grid search was conducted over feature-selection thresholds (correlation and variance inflation factor), PCA dimensionality, and the number of clusters to identify configurations that yield both interpretable and stable cluster structures.
-
-For each hyperparameter combination, features were selected, dimensionality was reduced using PCA, and KMeans clustering was applied. Clustering stability was assessed over multiple runs using repeated subsampling and perturbations. Specifically, clustering was repeated n times on an 80\% stratified subsample of the data, and stability was quantified using the Adjusted Rand Index (ARI) under three conditions: variation due to subsampling, random noise, and random initialization. It was used as a robustness indicator rather than a strict selection criterion \cite{ben-david_sober_2006}, with interpretability guiding the final choice of clusters.
-
-Clustering quality was evaluated using the silhouette score computed on a subsample to reduce bias, while cluster balance was enforced by tracking the minimum relative cluster size across runs. For each metric, median values and variability were reported to obtain robust estimates and reduce sensitivity to outliers. This procedure allows selecting hyperparameters that balance clustering quality, stability, and cluster size constraints while mitigating overfitting. Using medians over repeated runs reduces the influence of stochastic variation inherent to KMeans and subsampling. 
-
-Grid search was performed over feature-selection thresholds (correlation: 0.7–0.95, VIF: 3–100), PCA dimensionality (explained variance: 60–95\%), and the number of clusters k (2–5) to identify configurations that yield both interpretable and stable cluster structures.
-\fi
-
-
-\paragraph{Model Selection \& Interpretation}
-The final configuration is selected based on stability distributions, cluster balance and practical interpretability of cluster centroids.
-Centroids are mapped back to the original feature space to support domain-level interpretation. Interpretability is prioritized over marginal improvement in geometric separation.
 
 \subsection{Stage 1: Behavioral State Discovery}
 \label{meth:level1}
@@ -505,7 +507,7 @@ For a regime $r$ across the entire maneuver, ignoring scenario splits, the norma
 \frac{1}{T_m^{(r)}} 
 \sum_{t \in T_m \,:\, \tilde r_t = r} \frac{t}{T_m},
 \]
-where $T_m^{(r)}$ is the total number of windows in $m$ assigned to regime $r$, and $T_m$ is the total number of windows in maneuver $m$. This captures the true temporal distribution of the regime throughout the maneuver.
+where $T_m^{(r)}$ is the total number of windows in $m$ assigned to regime $r$, and $T_m$ is the total number of windows in maneuver $m$. This captures the true temporal distribution of the regime throughout the maneuver. 
 
 \paragraph{Entropy Measures.}
 Following \citeauthor{bachir_identifying_2025}, Shannon entropy is used to quantify behavioral variability and unpredictability across regime distributions.
