@@ -185,14 +185,9 @@ K-means was selected because:
 	\item It provides stable centroid-based partitions
 	\item It scales efficiently to large datasets
 	\item It yields directly interpretable cluster prototypes
-	\item Preliminary experiments showed no consistent advantage of density-b
 \end{itemize}
 Clustering is repeated with multiple random initializations to mitigate local minima effects.
 
-While Gaussian Mixture Models and DBSCAN were considered, preliminary experiments indicated that K-means achieved comparable or better separation of micro-behavioral regimes on the current trajectory features.
-\iffalse
-While Gaussian Mixture Models and DBSCAN were considered, preliminary experiments indicated that K-means achieved comparable or better separation of micro-behavioral regimes on the current trajectory features, with lower computational cost and fewer hyperparameters. As such, K-means was selected as the primary clustering algorithm for all stages, providing a robust and interpretable baseline for multi-stage aggregation.
-\fi
 
 \paragraph{Clustering Stability}
 Since no ground truth labels are available, robustness under perturbation is used as the primary reliability criterion.
@@ -252,15 +247,6 @@ The search aims to identify configurations that jointly satisfy:
 
 Stability serves as a robustness indicator rather than a strict optimization objective.
 
-\iffalse
-A grid search was conducted over feature-selection thresholds (correlation and variance inflation factor), PCA dimensionality, and the number of clusters to identify configurations that yield both interpretable and stable cluster structures.
-
-For each hyperparameter combination, features were selected, dimensionality was reduced using PCA, and KMeans clustering was applied. Clustering stability was assessed over multiple runs using repeated subsampling and perturbations. Specifically, clustering was repeated n times on an 80\% stratified subsample of the data, and stability was quantified using the Adjusted Rand Index (ARI) under three conditions: variation due to subsampling, random noise, and random initialization. It was used as a robustness indicator rather than a strict selection criterion \cite{ben-david_sober_2006}, with interpretability guiding the final choice of clusters.
-
-Clustering quality was evaluated using the silhouette score computed on a subsample to reduce bias, while cluster balance was enforced by tracking the minimum relative cluster size across runs. For each metric, median values and variability were reported to obtain robust estimates and reduce sensitivity to outliers. This procedure allows selecting hyperparameters that balance clustering quality, stability, and cluster size constraints while mitigating overfitting. Using medians over repeated runs reduces the influence of stochastic variation inherent to KMeans and subsampling. 
-
-Grid search was performed over feature-selection thresholds (correlation: 0.7–0.95, VIF: 3–100), PCA dimensionality (explained variance: 60–95\%), and the number of clusters k (2–5) to identify configurations that yield both interpretable and stable cluster structures.
-\fi
 
 
 \paragraph{Model Selection \& Interpretation}
@@ -273,7 +259,7 @@ Centroids are mapped back to the original feature space to support domain-level 
 The first stage of the hierarchical pipeline consists of segmenting each maneuver into short-term temporal windows and extracting descriptive features that characterize local riding behavior. This approach operationalizes the concept of micro-behavioral states, which capture short term variations in rider dynamics while preserving temporal continuity \cite{li_volatility-based_2025, bachir_identifying_2025, mohammadnazar_classifying_2021}.
 
 \subsubsection{Window Segmentation}
-Each maneuver is segmented using a sliding window of 3-second duration with 50\% overlap. 
+Each maneuver is segmented using a sliding window of 1-second duration with 50\% overlap. 
 This window length balances capturing short-term riding volatility and reflecting longer-term behavioral trends, following the findings of \citeauthor{li_volatility-based_2025} (\citeyear{li_volatility-based_2025}), who demonstrated that 1-second windows are suitable for detecting rapid fluctuations, 5-second windows for sustained aggressive patterns and 3-second windows achieve an optimal trade-off between the two. 
 The resulting windows provide a consistent temporal resolution for extracting local behavioral states, which serve as the input for regime discovery and subsequent aggregation.
 
@@ -545,7 +531,7 @@ H_{\text{global}}(m),
 
 This representation jointly captures scenario exposure, regime composition, temporal persistence and behavioral heterogeneity, forming the partial input for maneuver-level clustering.
 
-% introduce active passive split based on R_m > 1 and only in results. -> keep methodology unsupervised. active/passive would introduce supervised split!
+
 \subsection{Stage 2: Maneuver-Level Representation and Style Clustering}
 While Level 1 identifies local behavioral regimes, maneuvers themselves represent structured sequences of such regimes. The second abstraction layer therefore transforms regime sequences into maneuver-level representations.
 
@@ -571,29 +557,12 @@ All maneuvers of the same type are then clustered using the general clustering p
 This second clustering stage identifies maneuver-level styles, representing distinct execution modes characterized by internal behavioral structure rather than isolated kinematic measurements.
 
 \subsection{Stage 3: Infrastructure-Conditioned Analysis}
-The third stage evaluates how discovered regimes and maneuver-level styles relate to environment conditions. Clustering in Stages 1 and 2 is performed exclusively on behavioral features. Traffic and infrastructure variables are withheld from regime discovery to prevent environmental bias in behavioral abstraction.
+Stage 3 examines how maneuver-level execution styles relate to environmental context, including both infrastructure and traffic conditions. Importantly, all behavioral clustering in Stages 1 and 2 was performed independently of these variables, ensuring that any observed associations reflect contextual exposure rather than biasing the cluster discovery.
 
-Two complementary analysis are carried out:
+Several traffic exposure metrics were evaluated (e.g., TTC, DRAC, DCA, threshold exceedance fractions). Preliminary inspection showed largely consistent patterns across metrics; therefore, DRAC and TTC are reported here as representative indicators.
 
-\paragraph{(1) Window-Level Analysis}
-Given fixed regime assignments $\tilde r_t$, traffic and infrastructure features are analyzed conditionally:
-$$\mathbb{E}[\mathbf{x}_t^{\text{traffic}} \mid \tilde r_t = r], 
-\quad 
-\mathbb{E}[\mathbf{x}_t^{\text{infra}} \mid \tilde r_t = r]
-$$
-This reveals how local behavioral regimes manifest under different contextual conditions.
+For each maneuver cluster, distributions of environmental descriptors are summarized and compared descriptively to characterize the typical contextual exposure associated with different execution styles.
 
-Because scenario labels are embedded in $\tilde r_t$, regime-context relations can be analyzed within and across scenarios.
+Comparisons are visualized using empirical cumulative distribution functions (ECDFs), which illustrate the full distributional differences across clusters. The analysis focuses on identifying systematic patterns or tendencies, such as clusters occurring more frequently under high traffic density or in constrained intersection settings.
 
-\paragraph{(2) Maneuver-Level Analysis}
-At the maneuver level, cluster-specific distributions of traffic and infrastructure descriptors are compared:
-$$
-\mathbb{E}[\mathbf{x}_m^{\text{traffic}} \mid c_m = k]
-\quad
-\mathbb{E}[\mathbf{x}_m^{\text{infra}} \mid c_m = k]
-$$
-where $c_m$ denotes the maneuver cluster label.
-
-Analysis is exploratory and descriptive. Differences in means and dispersion are examined to identify systematic associations between maneuver styles and contextual exposure. 
-
-No causal claims are made. The objective is characterization rather than inference.
+This stage is exploratory and descriptive; no causal claims are made. Observed differences are interpreted as contextual characterization of maneuver execution styles rather than behavioral determinants.

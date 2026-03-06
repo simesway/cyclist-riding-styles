@@ -34,7 +34,7 @@ Feature selection identified a set of variables that contributed most meaningful
 Six features were common to both scenarios: \verb|acc_mad|, \verb|acc_max|, \verb|speed_qcv|, \verb|acc_qcv|, \verb|rot_fluc_max_abs| and \verb|rot_fluc_mad|. In addition, \verb|speed_mad| was retained only for intersection windows, whereas \verb|acc_min| and \verb|speed_std| were included exclusively for non-intersection windows.
 Radar plots of cluster centers (Figure X) and correlation matrices (Appendix Table Y) summarize the feature-level distinctions.
 
-The resulting clusters can be broadly characterized as stable and volatile, reflecting the magnitude and short-term variability of riding dynamics. The stable regime is marked by low fluctuations in speed, acceleration, and yaw rate, indicative of controlled, smooth riding behavior. In contrast, the volatile regime exhibits pronounced variability in these signals, reflecting abrupt or reactive maneuvering. Differences between scenarios are evident: intersection windows show greater variability across multiple features, consistent with higher environmental complexity and traffic interactions, while non-intersection windows are more homogeneous, reflecting smoother, less interrupted riding behavior. These findings demonstrate that overtaking maneuvers can be meaningfully decomposed into micro-behavioral regimes, with scenario-specific feature contributions and clearly distinguishable stability–volatility profiles.
+The resulting clusters can be broadly characterized as stable and volatile, reflecting the magnitude and short-term variability of riding dynamics. The stable regime is marked by low fluctuations in speed, acceleration, and yaw rate, indicative of controlled, smooth riding behavior. In contrast, the volatile regime exhibits pronounced variability in these signals, reflecting abrupt or reactive maneuvering. Differences between scenarios are evident: intersection windows show greater variability across multiple features, consistent with higher environmental complexity and possibly turning, while non-intersection windows are more homogeneous, reflecting smoother, less interrupted riding behavior. These findings demonstrate that overtaking maneuvers can be meaningfully decomposed into micro-behavioral regimes, with scenario-specific feature contributions and clearly distinguishable stability–volatility profiles.
 
 \subsection{Following}
 \begin{center}
@@ -51,8 +51,9 @@ For non-intersection segments, a two-cluster solution was selected. Stability me
 
 Across both scenarios, the retained features included \verb|acc_max|, \verb|acc_qcv|, \verb|speed_mad|, \verb|rot_fluc_max_abs| and \verb|rot_fluc_mad|. Intersection clustering additionally retained \verb|speed_qcv| and \verb|acc_mad|, whereas non-intersection clustering included \verb|acc_min| as a scenario-specific feature. Radar plots of cluster centers (Figure X) and full statistics (Appendix Table Y) illustrate feature-level distinctions.
 
+\iffalse
 Taken together, the combination of extremely high partition stability and only moderate geometric separation suggests that following behavior does not split into sharply distinct regimes, but rather into recurring patterns with gradual transitions between them. Such patterns can still be meaningfully represented as local states, as long as they reflect consistent and reproducible variations in observable riding dynamics. The resulting clusters therefore capture structured differences in motion variability without implying categorical behavioral types.
-
+\fi
 \paragraph{Intersection}
 The largest cluster (48.5\%, R0) reflects \textbf{smooth, steady pedaling}, with low speed and acceleration variability, modest positive mean acceleration, and minimal short-term fluctuations—indicative of relaxed, consistent riding.
 
@@ -66,9 +67,10 @@ The largest cluster (54.4\%, R0) represents \textbf{dynamic cruising}, with mode
 
 The second cluster (45.6\%, R1) reflects \textbf{steady progression}, with slightly lower speed, reduced acceleration variability, and minimal short-term changes. This indicates smoother, more consistent riding with limited micro-adjustments.
 
+\iffalse
 These clusters are thus interpreted as differing primarily in intensity of longitudinal control variability, rather than categorical behavioral modes.
 Compared to overtaking, following behavior exhibits higher regime multiplicity and lower geometric separation, suggesting a more continuous modulation of longitudinal control rather than event-driven volatility bursts.
-
+\fi
 
 \section{Aggregation Properties}
 
@@ -89,20 +91,26 @@ Global entropy was used to quantify the compositional diversity of regime sequen
 
 Following maneuvers showed substantially higher heterogeneity (median entropy = 0.731; 38\% single-regime) compared to overtaking maneuvers (median entropy = 0.0; 54\% single-regime). Importantly, this difference cannot be attributed solely to maneuver length. Although entropy increased with duration in following maneuvers (Spearman $\rho$ = 0.54), overtaking maneuvers exhibited only a weak association ($\rho$ = 0.11). When restricting the analysis to the 5–10,s duration range, where both maneuver types are well represented, following maneuvers remained predominantly multi-regime (median entropy = 0.837), whereas overtaking maneuvers were still frequently dominated by a single regime (55\% single-regime).
 
+\iffalse
 These results indicate a clear difference in how maneuvers unfold over time. Following maneuvers typically consist of several shorter regime segments, reflecting ongoing adjustments during the interaction. Overtaking maneuvers, in contrast, are often dominated by a single regime that persists throughout most of the maneuver.
 
 This pattern remains visible even when comparing maneuvers of similar duration, suggesting that the difference reflects distinct temporal organization rather than a simple length effect. In practical terms, overtaking tends to appear as a cohesive event, whereas following shows more internal variation.
 
 These differences in internal structure motivate the maneuver-level analysis in Stage~2, where we examine whether such temporal patterns translate into distinct maneuver groups.
-
+\fi
 \paragraph{Scenario Exposure}
 Overtaking maneuvers were largely concentrated in intersection segments (median intersection exposure = 1.0), while following maneuvers were more evenly distributed between intersection and non-intersection scenarios (median intersection exposure /approx 0.652). 
+
+\iffalse
 This pattern reflects that overtaking tends to occur as a localized, event-like maneuver, while following spans multiple segments. The observed distribution may also be influenced by differences in traffic density across the dataset, with intersections generally exhibiting higher traffic volumes than non-intersection segments.
+\fi
 
 \paragraph{Temporal Persistence and Center of Mass}
 Run-length statistics reveal further structural differences between maneuver types. In overtaking maneuvers, persistent regimes frequently spanned the majority of the maneuver (mean run lengths up to /approx 9s), reflecting temporally uninterrupted local states. Following maneuvers, in contrast, displayed shorter and recurrent runs (mean run lengths /approx 2s), reflecting more fragmented and dynamically modulated state sequences.
-For overtaking maneuvers, COMs show a notable spike around 0.5, consistent with maneuvers dominated by a single regime spanning the maneuver’s midpoint, alongside peaks at 0 for absent regimes. Following maneuvers display a less pronounced spike at 0.5, with a more broadly distributed COM around the middle of the maneuver. These patterns indicate that regimes can appear at varying temporal locations, and the COM distributions should be interpreted in the context of both regime presence and maneuver duration.
-
+For overtaking maneuvers, COMs show a notable spike around 0.5, consistent with maneuvers dominated by a single regime spanning the maneuver’s midpoint, alongside peaks at 0 for absent regimes. Following maneuvers display a less pronounced spike at 0.5, with a more broadly distributed COM around the middle of the maneuver.
+\iffalse
+These patterns indicate that regimes can appear at varying temporal locations, and the COM distributions should be interpreted in the context of both regime presence and maneuver duration.
+\fi
 
 These structural differences motivate the second abstraction stage, which examines whether maneuvers cluster into distinct execution styles based on regime composition and temporal structure.
 
@@ -122,38 +130,37 @@ Overtaking maneuvers were clustered using aggregated regime composition, persist
 \end{center}
 
 
-Clustering reveals five distinct overtaking behavior types that differ primarily in speed level, acceleration strategy, lateral passing behavior, and temporal stability of behavioral regimes. These patterns broadly separate into slow intersection-related overtakes, fast free-flow overtakes, and rare high-steering maneuvers.
+Clustering reveals five distinct overtaking behavior types that differ primarily in speed level, acceleration strategy, lateral passing behavior, and temporal stability of behavioral regimes. 
 
 \paragraph{Slow and Moderate Intersection Overtakes}
 
-Two clusters represent overtakes that occur predominantly at intersections, where cyclists typically move slower and interact more closely with other riders.
+Two clusters represent overtakes that occur predominantly at intersections ($P_m(I) \approx 0.98$ and $P_m(I) \approx 0.998$), where cyclists typically travel at lower speeds and interact more closely with other traffic participants.
 
-The first type (\textbf{Cluster 0}) consists of \textbf{slow and cautious overtakes}. These maneuvers are the shortest (duration $\approx 6.15\,s$) and occur at the lowest speeds ($speed_{mean} \approx 1.98\,m/s$), with minimal acceleration ($speed_{gain} \approx 0.27\,m/s$). The overtaken cyclist is also slow ($leader\_speed_{mean} \approx 1.31\,m/s$), and passing occurs at moderate distances ($distance_{cross} \approx 1.67\,m$). Regime dynamics show a balanced mix between behavioral states, indicating more frequent adjustments during the maneuver. Overall, this cluster represents careful passing in dense or constrained intersection environments.
+The first type (\textbf{Cluster 0}) represents \textbf{slow and cautious overtakes}. These maneuvers occur at the lowest speeds in the dataset ($speed_{mean} \approx 1.98,m/s$) and have relatively short durations (duration $\approx 6.15,s$) with minimal acceleration during the maneuver ($speed_{gain} \approx 0.27,m/s$). The cyclist being overtaken is also moving slowly ($leader_speed_{mean} \approx 1.31,m/s$), resulting in a moderate relative speed advantage ($rel_speed_{mean} \approx 1.38,m/s$). Passing typically occurs at moderate distances ($distance_{cross} \approx 1.67,m$), regime exposure shows a roughly balanced mixture of stable and volatile states (stable 48.3\%, volatile 51.7\%), reflecting frequent adjustments during the maneuver.
 
-The second intersection-related type (\textbf{Cluster 4}) represents \textbf{accelerating overtakes}. Starting from moderate speeds ($speed_{mean} \approx 3.90\,m/s$), cyclists accelerate strongly while passing ($speed_{gain} \approx 1.61\,m/s$; $long\_acc_{max} \approx 0.44\,m/s^2$, the highest among clusters). Maneuvers are slightly longer (duration $\approx 7.30\,s$) with balanced pull-out and merge-back phases. The passing gap is relatively wide ($lateral\_offset_{cross} \approx -0.59\,m$). Behavioral regimes remain highly stable throughout the maneuver, indicating a consistent overtaking strategy. This cluster therefore reflects controlled but decisive intersection overtakes where riders accelerate past slower cyclists.
+%Overall, this cluster reflects cautious overtaking behavior in dense or constrained intersection environments.
+
+The second intersection-related type (\textbf{Cluster 4}) represents \textbf{accelerating overtakes}. These maneuvers are characterized by strong acceleration during the overtake ($speed_{gain} \approx 1.61,m/s$; $long_acc_{max} \approx 0.44,m/s^2$). Maneuvers are slightly longer (duration $\approx 7.30\,s$) with balanced pull-out and merge-back phases. Most overtakes occur on the right side, with only about 29\% taking place on the left (left\_side ≈ 0.286). Behavioral regimes remain highly stable throughout the maneuver (stable 98,9\%), indicating a consistent overtaking strategy. 
+
+%This cluster therefore reflects controlled but decisive intersection overtakes where riders accelerate past slower cyclists.
 
 \paragraph{Fast Overtakes in Mixed and Free-Flow Conditions}
 
 Two clusters capture faster overtakes occurring in less constrained conditions, where cyclists maintain higher speeds and more stable motion.
 
-The first of these (\textbf{Cluster 1}) represents \textbf{fast and wide overtakes} with sustained effort. These maneuvers are the longest (duration $\approx 8.91\,s$) and occur at high speeds ($speed_{mean} \approx 5.30\,m/s$; $speed_{max} \approx 6.03\,m/s$). The overtaker maintains a clear speed advantage over the cyclist being passed ($rel\_speed_{mean} \approx 1.70\,m/s$). Riders also move further laterally when overtaking ($lateral\_offset_{cross} \approx -0.53\,m$), resulting in relatively long overtaking distances ($overtake\_length \approx 14.79\,m$). Behavioral regimes are extremely stable, suggesting a steady, uninterrupted overtaking strategy.
+The first of these (\textbf{Cluster 1}) represents \textbf{sustained high-speed overtakes}. These maneuvers have the longest duration (duration $\approx 8.91,s$) and occur at high speeds ($speed_{mean} \approx 5.30,m/s$; $speed_{max} \approx 6.03,m/s$). They happen in both intersections and non-intersections ($P_m(I) \approx 0.56$, $P_m(N) \approx 0.44$). Behavioral regimes are dominantly stable (stable 99.1\% at intersections, 99.6\% in non-intersections), suggesting continuous, sustained effort throughout the maneuver. The overtaker maintains a clear speed advantage over the cyclist being passed ($rel_speed_{mean} \approx 1.70,m/s$), allowing the maneuver to unfold over a relatively long distance ($overtake_length \approx 14.79,m$). About 74\% of overtakes occur on the right side (left\_side ≈ 0.26).
 
-The second type (\textbf{Cluster 3}) represents fast but \textbf{smooth free-flow overtakes}. This cluster occurs almost exclusively outside intersections and shows the highest average speed ($speed_{mean} \approx 5.35\,m/s$) while maintaining very low variability ($speed_{std} \approx 0.35\,m/s$). The overtaken cyclist is also relatively fast ($leader\_speed_{mean} \approx 3.82\,m/s$), and passing occurs with a consistent speed advantage ($rel\_speed_{mean} \approx 1.91\,m/s$). Compared to Cluster 1, lateral displacement is smaller ($lateral\_offset_{cross} \approx -0.30\,m$) and the maneuver appears more streamlined. Overall, these overtakes represent smooth passing in free-flow cycling conditions where both riders travel quickly.
+%Motion variability remains low, suggesting a steady and continuous overtaking strategy with sustained effort.
+
+The second type (\textbf{Cluster 3}) represents \textbf{smooth high-speed overtakes}. These maneuvers occur at the highest average speeds observed in the dataset ($speed_{mean} \approx 5.35,m/s$) while maintaining very low variability ($speed_{std} \approx 0.35,m/s$). The cyclist being overtaken is also traveling quickly ($leader_speed_{mean} \approx 3.82,m/s$), and the overtaker maintains a consistent speed advantage throughout the maneuver ($rel_speed_{mean} \approx 1.91,m/s$). Nearly all overtakes happen in non-intersection segments ($P_m(N) \approx 0.997$) and behavioral regimes are nearly entirely stable (stable 99.9\%), reflecting highly streamlined, continuous passing.
+
+%Overall, these overtakes reflect smooth, stable passing behavior under free-flow cycling conditions where both riders maintain relatively high speeds.
 
 \paragraph{High-Steering Overtakes}
 
-Finally, a small but distinctive cluster (\textbf{Cluster 2}) captures overtakes characterized by \textbf{sharp steering}. These maneuvers are relatively short (duration $\approx 5.84\,s$) and occur at moderately high speeds ($speed_{mean} \approx 4.80\,m/s$), but they stand out due to extremely high lateral movement ($lat\_speed_{max} \approx 2.23\,m/s$; $lat\_acc_{max} \approx 0.115\,m/s^2$), far exceeding values in other clusters. The overtaken cyclist travels at a similar speed ($leader\_speed_{mean} \approx 4.41\,m/s$), resulting in only a modest speed advantage. Behavioral regimes alternate more frequently than in fast free-flow overtakes. This cluster likely reflects situations where cyclists must steer sharply to initiate the pass, for example when space is limited or when overtaking riders with similar speeds.
+Finally, a small but distinctive cluster (\textbf{Cluster 2}) captures overtakes characterized by \textbf{sharp steering}. These short-duration maneuvers ($duration \approx 5.84,s$) occur at moderately high speeds ($speed_{mean} \approx 4.80,m/s$) but are dominated by lateral motion ($lat_speed_{max} \approx 2.23,m/s$; $lat_acc_{max} \approx 0.115,m/s^2$). Most take place in non-intersection scenarios ($P_m(N) \approx 0.97$). Regime exposure is roughly split (stable 47\%, volatile 53\%), indicating frequent transitions and adjustments during the maneuver. The overtaken cyclist moves at similar speed ($leader_speed_{mean} \approx 4.41,m/s$), producing only a modest speed advantage.
 
-\paragraph{Summary}
-
-Taken together, the clusters highlight three overarching overtaking patterns:
-\begin{itemize}
-	\item Slow intersection passes with cautious or accelerating behavior (Clusters 0 and 4),
-	\item Fast, stable overtakes in mixed or free-flow conditions (Clusters 1 and 3),
-	\item Rare steering-intensive overtakes characterized by abrupt lateral movement (Cluster 2).
-\end{itemize}
-
-These patterns suggest that overtaking behavior is strongly shaped by both traffic context and relative cyclist speeds, which in turn influence how riders manage acceleration, lateral clearance, and maneuver duration.
+%This cluster likely reflects situations where cyclists must steer sharply to initiate the pass, for example when space is limited or when overtaking riders with similar speeds.
 
 \subsection{Following Maneuver Execution Styles}
 
@@ -164,29 +171,41 @@ For following maneuvers, six clusters were identified. Stability measures indica
 \end{center}
 
 
-paragraph{Short and Moderate Following}
+\paragraph{Short and Moderate Following}
 
 Two clusters represent following behavior over short to moderate durations, with cyclists maintaining moderate gaps and adjusting their speed to track the leader.
 
-The first type (\textbf{Cluster 4}) corresponds to brief, stable following. These maneuvers are short (duration $\approx 4.84,s$) with moderate spacing ($gap_{mean} \approx 11.18,m$) and mild acceleration ($speed_{gain} \approx 0.32,m/s$). Cyclists maintain a consistent position relative to the leader, with moderate speed correlation ($speed_{corr} \approx 0.33$), indicating balanced responsiveness. This cluster reflects cautious, short interactions where the follower maintains a steady gap without large speed adjustments.
+The first type (\textbf{Cluster 4}) corresponds to \textbf{short steady following}. These maneuvers are short ($\approx 4.84,s$) with moderate spacing ($gap_{mean} \approx 11.18,m$) and mild acceleration ($speed_{gain} \approx 0.32,m/s$). Cyclists maintain a consistent position relative to the leader, with moderate speed correlation ($speed_{corr} \approx 0.33$), indicating balanced responsiveness. Most maneuvers occur at intersections ($ P_m(I) \approx 0.88 $), with local regime composition R0 15\% / R1 80\%, indicating primarily adjusting or flow riding with moderate fluctuations and some steady pedaling.
 
-The second type (\textbf{Cluster 0}) represents slightly longer but still moderate following. Cyclists maintain larger gaps ($gap_{mean} \approx 12.49,m$) and show more responsive speed adjustments ($speed_{gain} \approx 0.69,m/s$; $speed_{corr} \approx 0.61$), allowing smoother adaptation to the leader’s motion. These maneuvers last slightly less than 5 s on average (duration $\approx 4.61,s$) and involve low lateral variability ($lateral_offset_{std} \approx 0.52,m$). This cluster captures moderate tracking behavior with a balance between safety and responsiveness.
+%This cluster reflects cautious, short interactions where the follower maintains a steady gap without large speed adjustments.
+
+The second type (\textbf{Cluster 0}) represents \textbf{moderate following}. These maneuvers last slightly shorter ($\approx 4.61,s$) with larger gaps ($gap_{mean} \approx 12.49,m$) and show more responsive speed adjustments ($speed_{gain} \approx 0.69,m/s$; $speed_{corr} \approx 0.61$). Lateral variation is high (lateral\_offset\_std ≈ 0.52 m). Maneuvers occur mainly at intersections ($ P_m(I) \approx 0.88 $), with dominant R2 (91\%), indicating medium-term bursts or sprint-like adjustments within the following behavior.
+
+%Lateral variation is low (lateral\_offset\_std ≈ 0.52 m), showing stable tracking.
+%show more responsive speed adjustments ($speed_{gain} \approx 0.69,m/s$; $speed_{corr} \approx 0.61$), allowing smoother adaptation to the leader’s motion.
+%This cluster captures moderate tracking behavior with a balance between safety and responsiveness.
 
 \paragraph{Quick and Catch-Up Following}
 
 Two clusters capture maneuvers with higher acceleration and tighter spacing, where followers actively adjust to close gaps.
 
-The first of these (\textbf{Cluster 2}) represents short, reactive adjustments. Maneuvers are brief (duration $\approx 6.17,s$) with close spacing ($gap_{mean} \approx 8.25,m$) and strong acceleration ($speed_{gain} \approx 1.20,m/s$). Followers respond quickly to the leader’s motion (speed correlation $speed_{corr} \approx 0.82$; response delay $response_delay \approx 0.44,s$), allowing rapid catch-up. This cluster reflects high-intensity, short-term adjustments to maintain or reduce headway.
+The first of these (\textbf{Cluster 2}) represents reactive following with \textbf{quick adjustments}. Maneuvers are brief ($\approx 6.17,s$) with close spacing ($gap_{mean} \approx 8.25,m$) and strong acceleration ($speed_{gain} \approx 1.20,m/s$). Followers respond quickly to the leader’s motion ($speed_{corr} \approx 0.82$; $response_delay \approx 0.44,s$). Most maneuvers occur at intersections ($ P_m(I) \approx 0.89 $), with nearly all in R0 (88\%, smooth, steady).
 
-The second type (\textbf{Cluster 1}) captures sustained catch-up behavior. These maneuvers are longer (duration $\approx 7.43,s$) with relatively low minimum headway ($thw_{min} \approx 1.85,s$) and positive relative speed ($rel_speed_{mean} \approx 0.21,m/s$), indicating the follower accelerates above the leader’s speed. Maximum speeds are high ($speed_{max} \approx 5.21,m/s$), and lateral variation is moderate ($lateral_offset_{std} \approx 0.35,m$). This cluster likely reflects followers actively closing distance over medium durations, e.g., after temporary slowing or in dense traffic.
+%This cluster reflects high-intensity, short-term adjustments to maintain or reduce headway, most dominantly at intersections.
+
+The second type (\textbf{Cluster 1}) captures sustained \textbf{catch-up} behavior. These maneuvers are longer ($\approx 7.43,s$) with relatively low minimum THW ($thw_{min} \approx 1.85,s$) and positive relative speed ($rel_speed_{mean} \approx 0.21,m/s$), indicating the follower accelerates above the leader’s speed. Maximum speeds are high ($speed_{max} \approx 5.21,m/s$), and lateral variation is moderate ($lateral_offset_{std} \approx 0.35,m$). Scenario exposure is mostly non-intersections ($ P_m(N) \approx 0.75 $), with local regimes split: N-R1 85\% / N-R0 15\%, indicating sustained cruising with occasional short-term accelerations for catch-up.
+
+%This cluster likely reflects followers actively closing distance over medium durations, e.g., after temporary slowing, in dense traffic or before an overtaking maneuver.
 
 \paragraph{Prolonged and Spaced Following}
 
 Two clusters reflect longer, steady tracking, with either close or wide spacing.
 
-The first (\textbf{Cluster 3}) represents prolonged, close following. Maneuvers are the longest (duration $\approx 20.95,s$) with the tightest spacing ($gap_{min} \approx 6.08,m$) and relatively slow follower response ($response_delay \approx 1.27,s$). Acceleration is mild ($acc_{mean} \approx 0.01,m/s^2$), indicating steady maintenance rather than active catch-up. This cluster characterizes sustained tracking behind a leader over long stretches, where lateral adjustments are moderate ($lateral_offset_{std} \approx 0.42,m$).
+The first (\textbf{Cluster 3}) represents \textbf{prolonged, close following}. Maneuvers are the longest ($\approx 20.95,s$) with the tightest spacing ($gap_{min} \approx 6.08,m$) and relatively slow follower response ($response_delay \approx 1.27,s$). Acceleration is mild ($acc_{mean} \approx 0.01,m/s^2$), indicating steady maintenance rather than active catch-up. This cluster characterizes sustained tracking behind a leader over long stretches, where lateral adjustments are moderate ($lateral_offset_{std} \approx 0.42,m$). Scenario exposure is split ($ P_m(I) \approx 0.48 $; $ P_m(N) \approx 0.52 $), with I-R0 50\%, I-R1 45\%, N-R0 56\%, N-R1 37\%, showing a mix of steady pedaling and adjusting/flow riding across scenarios.
 
-The second (\textbf{Cluster 5}) corresponds to spaced cruising. These maneuvers have moderately long duration (duration $\approx 7.01,s$) and the largest gaps ($gap_{mean} \approx 13.70,m$). Speed variability is low ($speed_{std} \approx 0.20,m/s$) and coupling with leader speed is weak ($speed_{corr} \approx 0.21$), suggesting relaxed, low-interaction following. This cluster reflects situations where cyclists maintain wide separation and stable speed, for example in lightly trafficked sections or relaxed group riding.
+The second (\textbf{Cluster 5}) corresponds to \textbf{spaced cruising}. These maneuvers have moderately long duration (duration $\approx 7.01,s$) and the largest gaps ($gap_{mean} \approx 13.70,m$). Speed variability is low ($speed_{std} \approx 0.20,m/s$) and coupling with leader speed is weak ($speed_{corr} \approx 0.21$), suggesting relaxed, low-interaction following. Mostly non-intersections ($ P_m(N) \approx 0.96 $), dominated by N-R0 80\% / N-R1 20\%, reflecting dynamic cruising with moderate fluctuations.
+
+%This cluster reflects situations where cyclists maintain wide separation and stable speed, for example in lightly trafficked sections or relaxed group riding.
 
 
 
@@ -208,10 +227,10 @@ To provide an overview of the identified maneuver types, Table X summarizes clus
 		\begin{tabular}{|c|c|c|l|c|c|l|m{4cm}|}
 			\hline
 			$\tau$                      & Cluster & count & Short Label      & $P_m(I)$ & $P_m(N)$ & Regime composition                         & Behavioral characteristics                                      \\ \hline
-			\multirow{5}{*}{Overtaking} & 0       & 87    & Slow Steady      & 0.98     & 0.02     & stable 48,3\% , volatile 51,7\%            & Gradual, low-speed, evenly paced maneuver                       \\ \cline{2-8} 
-			& 4       & 241   & Accelerating     & 0.98     & 0.02     & stable 98,9\%                              & Moderate-speed with steady longitudinal acceleration            \\ \cline{2-8} 
-			& 1       & 141   & Fast Wide        & 0.56     & 0.44     & stable (I, 99,1\%),  stable(N, 99,6\%)     & High-speed, wide lateral displacement, sustained effort         \\ \cline{2-8} 
-			& 3       & 88    & Fast Smooth      & 0.00     & 1.00     & stable 99,9\%                              & High-speed, steady, streamlined, minimal lateral variation      \\ \cline{2-8} 
+			\multirow{5}{*}{Overtaking} & 0       & 87    & Slow Cautious      & 0.98     & 0.02     & stable 48,3\% , volatile 51,7\%            & Gradual, low-speed, evenly paced maneuver                       \\ \cline{2-8} 
+			& 4       & 241   & Accelerating     & 0.998     & 0.02     & stable 98,9\%                              & Moderate-speed with steady longitudinal acceleration            \\ \cline{2-8} 
+			& 1       & 141   & Sustained High-Speed        & 0.56     & 0.44     & stable (I, 99,1\%),  stable(N, 99,6\%)     & High-speed, wide lateral displacement, sustained effort         \\ \cline{2-8} 
+			& 3       & 88    & Smooth High-Speed     & 0.00     & 1.00     & stable 99,9\%                              & High-speed, steady, streamlined, minimal lateral variation      \\ \cline{2-8} 
 			& 2       & 16    & Sharp Steering   & 0.03     & 0.97     & stable 47\%, volatile 53\%                 & Abrupt, lateral-dominated, agile maneuvering                    \\ \hline
 			\multirow{6}{*}{Following}  & 5       & 635   & Spaced Cruise    & 0.04     & 0.96     & N-R0 80\%, N-R1  20\%                      & Moderate duration, largest gaps, stable low-variability speeds  \\ \cline{2-8} 
 			& 4       & 721   & Short Steady     & 0.88     & 0.12     & I-R0 15\%, I-R1 80\%                       & Short-duration, moderate gap, mild acceleration                 \\ \cline{2-8} 
@@ -225,9 +244,37 @@ To provide an overview of the identified maneuver types, Table X summarizes clus
 
 \section{Infrastructure \& Traffic Conditioning}
 
-Infrastructure characteristics showed little variation across maneuver clusters within the same scenario category. This is expected because windows were already separated into intersection and non-intersection contexts during regime discovery. Consequently, infrastructure variables were largely homogeneous within each scenario group and did not contribute strongly to maneuver-level differentiation.
+This stage examines whether maneuver execution styles identified in Stage 2 occur under systematically different traffic conditions. Surrogate safety measures and local traffic density metrics were aggregated at the maneuver level (see Methods). Comparisons between clusters are visualized using empirical cumulative distribution functions (ECDFs).
 
-Due to the small sample size (n=16), ECDF curves exhibit strong step artifacts and no robust contextual interpretation can be derived.
-\iffalse
-found a few ecdf plots with distinct cluster curves: overtaking: for intersection dominant clusters: pedestrian_drac: cluster 0 rises fastest with low drac, followed by cluster 4 and then cluster 1 bicycle_drac: cluster 0 rises fastest again, followed by cluster 1 and then 0 bicycle count (within 5m): cluster 1 and 4 experience higher counts compared to 0 car and pedestrian min ttc: cluster 4 has rises faster with low min-ttc compared to 0 and 1 non-intersection dominant: (including cluster 1 since mixed contexts) bicycle count: cluster 1 experiences higher bicycle counts compared to 3 and 2 stepwise nature of cluster 2 (16 maneuvers) makes it hard to interpret most, (does it lay above or below) following: when comparing all together 1 diverges most, but probably since it is has largest scenario spread, and it follows a different curve than the other clusters intersection-dominant: for clusters 0,2,4 most curves look identical only slight differences how would i show this? i cant just take some random plot and say "look here, no difference" non-intersection-dominant: (3 und 5) bicycle-min-ttc: cluster 5 experiences a lot lower min-ttc than 3 fraction-of-ttc-below-3s-pedestrian: both have an s curve but teh s-curve for 5 is shallow while the one for 3 is steep. -> 3 experiences more higher fractions of ttcs below th min-ttc car and pedestrian: cluster 5 sooner reaches the right border (max ttc of 6s, higher ttc are not considered) meaning 5 experiences less min-ttc between 2 and 6 seconds
-\fi
+Because maneuver clusters already differ substantially in scenario exposure (intersection vs. non-intersection), comparisons are restricted to clusters with similar contextual prevalence.
+
+Across both maneuver types, infrastructure descriptors showed little variation between clusters within the same scenario category. This is consistent with the regime discovery stage, where windows were already separated into intersection and non-intersection contexts, resulting in relatively homogeneous infrastructure characteristics within each scenario group.
+
+Traffic exposure metrics showed limited differentiation between maneuver clusters, with most ECDF distributions partially overlapping.
+
+\paragraph{Overtaking Maneuvers}
+
+\begin{center}
+	\textbf{Missing Figure: missing plots underlining the next paragraph}
+\end{center}
+
+For overtaking maneuvers occurring primarily at intersections (Cluster 0 and 4), moderate differences were observed in traffic exposure metrics. Accelerating overtakes (Cluster 4) showed higher pedestrian DRAC values and lower pedestrian minimum TTC compared to slow-cautious overtakes (Cluster 0). Bicycle-related metrics showed similar but less pronounced tendencies.
+
+Among overtakes occurring primarily in non-intersection contexts, sustained high-speed overtakes (cluster 1) were associated with higher bicycle counts compared to smooth high-speed overtakes (cluster 3), although ECDF distributions still showed substantial overlap.
+
+The sharp-steering overtakes cluster (cluster 2) exhibited stepwise ECDF curves due to the small sample size ($n=16$), limiting interpretation of traffic exposure patterns.
+
+
+\paragraph{Following Maneuvers}
+
+\begin{center}
+	\textbf{Missing Figure: representative ecdf for ttc and drac that show overlapping curves, for both groups}
+\end{center}
+
+Following maneuvers showed little differentiation in traffic exposure across clusters. Intersection-dominant clusters (Clusters 0, 2, and 4; ) displayed nearly identical ECDF distributions across all analyzed traffic metrics.
+
+Non-intersection-dominant clusters (Clusters 1 and 5) also exhibited largely overlapping ECDF curves, with only minor variations across metrics.
+
+Cluster 3, which occurs with approximately equal exposure to intersection and non-intersection contexts, showed intermediate distributions relative to the other clusters.
+
+Overall, traffic exposure metrics showed no consistent ordering across clusters and ECDF curves largely overlapped.
