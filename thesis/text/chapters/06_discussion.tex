@@ -3,6 +3,118 @@
 
 \section{Methodological Considerations}
 
+\subsection{General Clustering Pipeline}
+
+The generalized clustering pipeline reliably captured both local and maneuver-level cycling regimes, demonstrating that a simple, modular, unsupervised approach can extract meaningful behavioral patterns across different temporal scales. K-means clustering in PCA space produced stable and interpretable partitions, with robustness confirmed through subsampling, initialization variation, and noise perturbations.
+
+A key advantage of the framework is its modular design, which allows stage-specific adjustments—such as feature selection, dimensionality reduction, or clustering parameters—without affecting other stages. This flexibility enables tailored handling of short-term local dynamics and maneuver-level aggregations while maintaining a consistent analytical pipeline. Even with standard techniques, the approach therefore provides a robust baseline for hierarchical behavioral analysis.
+
+\subsection{Sliding Windows}
+
+Local behavioral regimes were identified by clustering 1 s sliding windows with 50\% overlap, providing a consistent time-window for feature extraction. This window length captures short-term fluctuations in riding dynamics while preserving sufficient temporal resolution for maneuver-level analysis.
+
+Previous work suggests that segmentation choices influence the behavioral patterns that emerge: shorter windows capture rapid fluctuations, longer windows reflect sustained behaviors, and intermediate durations around 3 s can balance both perspectives \cite{li_volatility-based_2025}. Overlap percentages may also affect regime continuity, and event-driven segmentation strategies, such as dividing trajectories based on acceleration or deceleration phases, have been proposed to better capture intrinsic behavioral transitions \cite{yarlagadda_exploring_2022}.
+
+Within the present framework, the micro-level regimes extracted from sliding windows form the basis for maneuver-level aggregation. These short-term behavioral fluctuations provide the temporal building blocks from which broader execution styles emerge during overtaking and following maneuvers.
+
+
+\section{Behavioral Findings}
+\subsection{Maneuver Detection Validation}
+
+The maneuver detection procedure produced results comparable to those reported by \citeauthor{kutsch_analyzing_2025} (\citeyear{kutsch_analyzing_2025}). Following maneuvers exhibited slightly larger longitudinal gaps and time headways than previously reported (mean gap 11.16 m vs. 9.58 m; mean THW 2.67 s vs. 1.96 s), which may reflect differences in filtering criteria or detection thresholds.
+
+For overtaking maneuvers, 573 events were identified compared to 319 in the earlier study. Despite methodological differences—where the previous work emphasized precise boundary detection while the present framework prioritizes scalability and reproducibility—maneuver durations were highly comparable (mean 7.6 s vs. ~8 s; swerve-out 3.7 s vs. 3.8 s; merge-back 3.8 s vs. 4.17 s).
+
+These similarities indicate that the detection approach produces consistent maneuver definitions and provides a reliable foundation for unsupervised behavioral analysis.
+
+\subsection{Overtaking Maneuvers}
+
+\paragraph{Local Behavioral Regimes}
+Clustering of overtaking windows revealed two primary behavioral regimes, stable and volatile. This pattern aligns with the characterization reported by \citeauthor{bachir_identifying_2025}, who observed a comparable proportion of volatile windows in free-flow cycling conditions (approximately 4 %).
+
+Scenario differences were pronounced. Windows occurring near intersections exhibited greater volatility than those on non-intersection segments, likely reflecting the increased environmental complexity and interaction density typical of these locations. Rotation fluctuation played a particularly strong role in distinguishing regimes at intersections.
+
+Unlike \citeauthor{bachir_identifying_2025}, who adjusted this metric to remove curvature effects, the present analysis used the raw signal. As a result, apparent variability may be amplified in geometrically complex environments such as intersections. Accounting for curvature effects could therefore refine regime separation in future analyses.
+
+These local regimes reveal how cyclists alternate between stable control and short bursts of variability during overtaking maneuvers. Consistent with these micro-level patterns, maneuver-level aggregation illustrates how such fluctuations combine to produce distinct overtaking execution styles.
+
+\paragraph{Maneuver Execution Styles}
+Aggregating local regimes into maneuver-level representations revealed five overtaking execution styles shaped by both rider strategy and environmental context.
+
+Two clusters primarily occurred near intersections. Slow and cautious overtakes (Cluster 0) reflected careful adjustments within constrained intersection environments, combining moderate speeds with a balanced mix of stable and volatile regimes. Accelerating overtakes (Cluster 4) captured maneuvers likely initiated immediately after traffic signals or stop–go situations, characterized by strong acceleration and rapid speed increases.
+
+In mixed or free-flow conditions, two additional clusters dominated. Smooth high-speed overtakes (Cluster 3) represented the typical free-flow passing maneuver, with steady speeds and minimal variability. Sustained high-speed overtakes (Cluster 1) involved longer maneuvers with controlled, continuous acceleration.
+
+Finally, sharp-steering overtakes (Cluster 2) consisted of short-duration maneuvers with pronounced lateral motion. Given the cluster’s low frequency and extreme lateral values, these events likely represent rare constrained interactions or residual noise from the overtaking detection algorithm.
+
+Taken together, these clusters illustrate how rider strategy—such as steady progression, acceleration bursts, or pronounced lateral adjustments—interacts with environmental context to produce distinct overtaking styles. The aggregation of micro-level regimes therefore provides a meaningful bridge between local riding dynamics and maneuver-level execution patterns.
+
+\paragraph{Contextual Exposure}
+To explore how these execution styles relate to surrounding traffic conditions, maneuver clusters were subsequently examined with respect to environmental and interaction metrics. Because execution styles were identified independently of contextual variables, these comparisons describe where behaviors tend to occur rather than why they arise.
+
+Infrastructure variables such as lane width and lane type showed minimal variation within scenario-dominant clusters, suggesting that geometric characteristics do not drive differences in overtaking execution styles once the broader scenario context is fixed.
+
+Traffic exposure metrics showed moderate associations. Accelerating intersection overtakes were generally accompanied by higher pedestrian conflict indicators, reflected in elevated DRAC and TTC values, whereas slow-cautious intersection overtakes occurred under lower interaction exposure. Among non-intersection maneuvers, clusters were largely similar, with only minor differences in bicycle counts.
+
+Interpretation of the sharp-steering overtakes cluster is limited by its small sample size (n = 16), which produced stepwise ECDF curves. Overall, these observations suggest that overtaking execution styles may adapt partially to surrounding traffic demands, although the observed relationships remain descriptive rather than causal.
+
+\subsection{Following Maneuvers}
+
+\paragraph{Local Behavioral Regimes}
+Following maneuvers exhibited more gradual and transient behavioral regimes than overtaking maneuvers. Although clustering produced highly stable partitions across resampling and initialization, geometric separation between clusters remained moderate (silhouette $ \approx 0.24 $; Davies–Bouldin $ \approx 1.40 $).
+
+These results indicate that the identified regimes reflect structured variations in longitudinal control rather than sharply separated behavioral modes. This finding is consistent with the continuous nature of following interactions, where cyclists constantly adjust speed and spacing in response to the leader and other contextual factors.
+
+Scenario-specific differences were nevertheless observable. Intersection windows showed slightly higher variability and retained additional regimes compared with non-intersection windows, suggesting that environmental complexity increases the degree of micro-level adjustment. Overall, the moderate separation combined with high clustering stability indicates that following regimes capture reproducible patterns of variation rather than discrete behavioral states.
+
+\paragraph{Maneuver Execution Styles}
+When aggregated at the maneuver level, following clusters revealed meaningful differences in interaction intensity and temporal organization. However, these clusters should be interpreted as gradations of behavior rather than discrete maneuver types.
+
+Short or quick following maneuvers, often occurring near intersections, exhibited higher lateral variability, reflecting reactive adjustments to complex environments. In contrast, longer maneuvers concentrated on non-intersection segments showed steadier speeds and larger spacing, indicating more stable tracking behavior.
+
+Clusters characterized as catch-up or quick adjustment involved stronger acceleration and shorter headways, representing higher-intensity following interactions. Conversely, spaced cruising and prolonged close following reflected lower-intensity behavior with more consistent speed matching.
+
+These patterns demonstrate that maneuver-level execution styles remain structured and reproducible despite the gradual transitions between them. The observed gradation mirrors the underlying variability of micro-regimes, reinforcing the interpretation of following behavior as a continuous control process rather than a sequence of discrete states.
+
+\paragraph{Contextual Exposure}
+Contextual comparisons showed substantially weaker differentiation for following maneuvers than for overtaking maneuvers. Once scenario context was controlled, ECDF distributions of traffic exposure metrics largely overlapped across clusters, and ordering between clusters varied across metrics and participant types.
+
+This pattern suggests that following execution styles are primarily governed by leader-follower interaction dynamics, including gap regulation, speed matching, and response timing, rather than by broader environmental conditions.
+
+The scenario-based separation clarifies where maneuvers occur, for instance, whether they predominantly appear near intersections or on open segments, but it does not explain the internal structure of the maneuver itself. Instead, execution styles within these contexts appear to reflect intrinsic behavioral strategies. This interpretation is consistent with the gradual clustering structure observed in both local regimes and maneuver-level patterns.
+
+
+\section{Framework Insights}
+
+
+Clusters were formed independently of contextual features, ensuring that maneuver-level clustering reflects intrinsic riding kinematics rather than environmental conditions. Scenario separation was applied prior to window clustering, so aggregation naturally accounts for distinct scenario types (intersection vs. non-intersection). This separation produces an indirect effect on maneuver-level clusters: aggregation reflects scenario exposure, allowing execution styles to be implicitly informed by environmental context without including context variables in the clustering itself. Consequently, the framework captures scenario-informed execution patterns while preserving the kinematics-driven structure of the clusters.
+
+Local sliding-window regimes continue to provide the building blocks for maneuver-level execution styles, representing intrinsic patterns derived purely from trajectory-based features. Contextual conditioning then maps these execution styles onto traffic and infrastructure conditions to identify under which certain behaviors tend to occur.
+
+The scenario-based separation effectively controls for broad environmental differences such as intersection versus non-intersection segments. Within these scenario classes, maneuver execution styles show limited differentiation across traffic metrics, indicating that the internal dynamics of maneuvers are largely independent of immediate environmental conditions.
+
+Behavioral self-selection may further influence observed patterns: cyclists likely initiate maneuvers such as overtaking only when perceived interaction conditions—such as available lateral space or acceptable conflict risk—are favorable. This implicit filtering reduces variability in the environmental context observed during the maneuver itself.
+
+Overall, the hierarchical pipeline systematically separates intrinsic maneuver execution patterns from contextual exposure, enabling detailed study of behavior while controlling for environmental variation.
+
+\section{Future Directions}
+Cyclist behavior during complex maneuvers such as overtaking and following remains poorly understood, particularly with respect to execution styles and interaction dynamics. The hierarchical framework developed in this study captures both micro-level riding dynamics and maneuver-level patterns while remaining independent of infrastructure descriptors, providing a systematic basis for cross-scenario behavioral analysis.
+
+Because the underlying data originates from drone-based trajectory recordings, trajectories can be efficiently collected across diverse infrastructure settings. This scalability enables comparative analyses of cyclist behavior across cities, infrastructure designs, and traffic conditions.
+
+The framework is also feature-agnostic. Although the present study employed sliding-window riding dynamics, maneuver-level descriptors, and descriptive traffic metrics, alternative feature sets can be integrated without modifying the pipeline. Future work could therefore explore different riding features, micro-regime definitions, or context descriptors to refine behavioral representations.
+
+Further extensions could analyze additional maneuver types—such as turning at intersections, accelerating after stops, or merging behaviors—and investigate maneuver phases more explicitly. Phase-specific contextual metrics or interaction indicators tailored to cyclist dynamics may reveal more detailed relationships between maneuver execution and surrounding traffic conditions.
+
+The present framework primarily identifies \textit{how} cyclists execute maneuvers by revealing distinct execution strategies derived from trajectory-based riding kinematics. Through scenario separation and subsequent contextual conditioning, it also provides insight into \textit{where} these strategies tend to occur. In particular, the scenario-based separation (e.g., intersection vs. non-intersection) captures the dominant environmental context in which maneuvers take place, while the contextual conditioning step examines how execution styles are exposed to surrounding traffic conditions within those contexts. However, the framework does not directly address the decision processes that lead cyclists to adopt a particular strategy. Future research could therefore investigate \textit{why} and \textit{when} specific execution styles emerge, for example by linking maneuver strategies to preceding traffic conditions, interaction dynamics, or perceived environmental constraints.
+
+\iffalse
+
+
+
+
+\section{Methodological Considerations}
+
 
 \subsubsection{General Clustering Pipeline}
 The generalized clustering pipeline reliably captured both local and maneuver-level cycling regimes, demonstrating that a simple, modular, unsupervised approach can extract meaningful behavioral patterns at each stage. K-means clustering in PCA space provided stable, interpretable partitions, with robustness confirmed under subsampling, initialization, and noise perturbations. Its modular design allows stage-specific adjustments—such as feature selection, dimensionality reduction, or clustering parameters—without affecting other stages, enabling tailored handling of local windows versus maneuver-level aggregations. These results indicate that even a basic, standard pipeline can serve as a robust baseline for hierarchical behavioral analysis.
@@ -86,7 +198,7 @@ Other Maneuver types can also be evaluated like Turning at intersection, acceler
 
 
 
-\iffalse
+
 
 
 In this study, overtaking maneuvers were captured as independent events by stationary drones, without the ability to track individual cyclists across multiple occurrences. As a result, clustering analysis of overtaking cannot reveal persistent cyclist-specific behavior (“styles”), but only transient maneuver types. Our results confirm this: clusters reliably distinguish between active, interaction-driven overtakes and passive, free-flow overtakes, yet these clusters reflect event-level modes rather than enduring behavioral regimes. In contrast, following behavior is continuous within a trajectory and can be clustered into regimes, such as “close, reactive” versus “far, stable” following, because it exhibits persistent patterns over time. This distinction highlights a fundamental methodological limitation: regime-level analyses require repeated observations of the same agent, which is not available for overtaking in the current dataset.
