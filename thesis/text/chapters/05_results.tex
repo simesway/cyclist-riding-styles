@@ -108,9 +108,6 @@ This pattern reflects that overtaking tends to occur as a localized, event-like 
 \paragraph{Temporal Persistence and Center of Mass}
 Run-length statistics reveal further structural differences between maneuver types. In overtaking maneuvers, persistent regimes frequently spanned the majority of the maneuver (mean run lengths up to /approx 9s), reflecting temporally uninterrupted local states. Following maneuvers, in contrast, displayed shorter and recurrent runs (mean run lengths /approx 2s), reflecting more fragmented and dynamically modulated state sequences.
 For overtaking maneuvers, COMs show a notable spike around 0.5, consistent with maneuvers dominated by a single regime spanning the maneuver’s midpoint, alongside peaks at 0 for absent regimes. Following maneuvers display a less pronounced spike at 0.5, with a more broadly distributed COM around the middle of the maneuver.
-\iffalse
-These patterns indicate that regimes can appear at varying temporal locations, and the COM distributions should be interpreted in the context of both regime presence and maneuver duration.
-\fi
 
 These structural differences motivate the second abstraction stage, which examines whether maneuvers cluster into distinct execution styles based on regime composition and temporal structure.
 
@@ -130,7 +127,7 @@ Overtaking maneuvers were clustered using aggregated regime composition, persist
 \end{center}
 
 
-Clustering reveals five distinct overtaking behavior types that differ primarily in speed level, acceleration strategy, lateral passing behavior, and temporal stability of behavioral regimes. 
+Clustering reveals five distinct overtaking execution styles that differ primarily in speed, acceleration strategy, lateral passing behavior, and temporal stability of behavioral regimes.
 
 \paragraph{Slow and Moderate Intersection Overtakes}
 
@@ -140,7 +137,7 @@ The first type (\textbf{Cluster 0}) represents \textbf{slow and cautious overtak
 
 %Overall, this cluster reflects cautious overtaking behavior in dense or constrained intersection environments.
 
-The second intersection-related type (\textbf{Cluster 4}) represents \textbf{accelerating overtakes}. These maneuvers are characterized by strong acceleration during the overtake ($speed_{gain} \approx 1.61,m/s$; $long_acc_{max} \approx 0.44,m/s^2$). Maneuvers are slightly longer (duration $\approx 7.30\,s$) with balanced pull-out and merge-back phases. Most overtakes occur on the right side, with only about 29\% taking place on the left (left\_side ≈ 0.286). Behavioral regimes remain highly stable throughout the maneuver (stable 98,9\%), indicating a consistent overtaking strategy. 
+The second intersection-related type (\textbf{Cluster 4}) represents \textbf{accelerating overtakes}. These maneuvers are characterized by strong acceleration during the overtake ($speed_{gain} \approx 1.61,m/s$; $long_acc_{max} \approx 0.44,m/s^2$). Maneuvers are slightly longer (duration $\approx 7.30\,s$) with balanced pull-out and merge-back phases. Most overtakes occur on the right side, with only about 29\% taking place on the left (left\_side $ \approx $ 0.286). Behavioral regimes remain highly stable throughout the maneuver (stable 98,9\%), indicating a consistent overtaking strategy. 
 
 %This cluster therefore reflects controlled but decisive intersection overtakes where riders accelerate past slower cyclists.
 
@@ -148,7 +145,7 @@ The second intersection-related type (\textbf{Cluster 4}) represents \textbf{acc
 
 Two clusters capture faster overtakes occurring in less constrained conditions, where cyclists maintain higher speeds and more stable motion.
 
-The first of these (\textbf{Cluster 1}) represents \textbf{sustained high-speed overtakes}. These maneuvers have the longest duration (duration $\approx 8.91,s$) and occur at high speeds ($speed_{mean} \approx 5.30,m/s$; $speed_{max} \approx 6.03,m/s$). They happen in both intersections and non-intersections ($P_m(I) \approx 0.56$, $P_m(N) \approx 0.44$). Behavioral regimes are dominantly stable (stable 99.1\% at intersections, 99.6\% in non-intersections), suggesting continuous, sustained effort throughout the maneuver. The overtaker maintains a clear speed advantage over the cyclist being passed ($rel_speed_{mean} \approx 1.70,m/s$), allowing the maneuver to unfold over a relatively long distance ($overtake_length \approx 14.79,m$). About 74\% of overtakes occur on the right side (left\_side ≈ 0.26).
+The first of these (\textbf{Cluster 1}) represents \textbf{sustained high-speed overtakes}. These maneuvers have the longest duration (duration $\approx 8.91,s$) and occur at high speeds ($speed_{mean} \approx 5.30,m/s$; $speed_{max} \approx 6.03,m/s$). They happen in both intersections and non-intersections ($P_m(I) \approx 0.56$, $P_m(N) \approx 0.44$). Behavioral regimes are dominantly stable (stable 99.1\% at intersections, 99.6\% in non-intersections), suggesting continuous, sustained effort throughout the maneuver. The overtaker maintains a clear speed advantage over the cyclist being passed ($rel_speed_{mean} \approx 1.70,m/s$), allowing the maneuver to unfold over a relatively long distance ($overtake_length \approx 14.79,m$). About 74\% of overtakes occur on the right side (left\_side $ \approx $ 0.26).
 
 %Motion variability remains low, suggesting a steady and continuous overtaking strategy with sustained effort.
 
@@ -179,7 +176,7 @@ The first type (\textbf{Cluster 4}) corresponds to \textbf{short steady followin
 
 %This cluster reflects cautious, short interactions where the follower maintains a steady gap without large speed adjustments.
 
-The second type (\textbf{Cluster 0}) represents \textbf{moderate following}. These maneuvers last slightly shorter ($\approx 4.61,s$) with larger gaps ($gap_{mean} \approx 12.49,m$) and show more responsive speed adjustments ($speed_{gain} \approx 0.69,m/s$; $speed_{corr} \approx 0.61$). Lateral variation is high (lateral\_offset\_std ≈ 0.52 m). Maneuvers occur mainly at intersections ($ P_m(I) \approx 0.88 $), with dominant R2 (91\%), indicating medium-term bursts or sprint-like adjustments within the following behavior.
+The second type (\textbf{Cluster 0}) represents \textbf{moderate following}. These maneuvers last slightly shorter ($\approx 4.61,s$) with larger gaps ($gap_{mean} \approx 12.49,m$) and show more responsive speed adjustments ($speed_{gain} \approx 0.69,m/s$; $speed_{corr} \approx 0.61$). Lateral variation is high (lateral\_offset\_std $ \approx $ 0.52m). Maneuvers occur mainly at intersections ($ P_m(I) \approx 0.88 $), with dominant R2 (91\%), indicating medium-term bursts or sprint-like adjustments within the following behavior.
 
 %Lateral variation is low (lateral\_offset\_std ≈ 0.52 m), showing stable tracking.
 %show more responsive speed adjustments ($speed_{gain} \approx 0.69,m/s$; $speed_{corr} \approx 0.61$), allowing smoother adaptation to the leader’s motion.
@@ -223,8 +220,8 @@ To provide an overview of the identified maneuver types, Table X summarizes clus
 % \usepackage{graphicx}
 \begin{table}[]
 	\caption{Summary of identified overtaking and following maneuver clusters, with their prevalence, regime composition, and key behavioral characteristics.}
-	\resizebox{\textwidth}{!}{%
-		\begin{tabular}{|c|c|c|l|c|c|l|m{4cm}|}
+	\resizebox{\textwidth}{!}{
+		\begin{tabular}{|c|c|c|l|c|c|l|l|}
 			\hline
 			$\tau$                      & Cluster & count & Short Label      & $P_m(I)$ & $P_m(N)$ & Regime composition                         & Behavioral characteristics                                      \\ \hline
 			\multirow{5}{*}{Overtaking} & 0       & 87    & Slow Cautious      & 0.98     & 0.02     & stable 48,3\% , volatile 51,7\%            & Gradual, low-speed, evenly paced maneuver                       \\ \cline{2-8} 

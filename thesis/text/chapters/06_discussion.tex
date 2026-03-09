@@ -7,7 +7,7 @@
 
 The generalized clustering pipeline reliably captured both local and maneuver-level cycling regimes, demonstrating that a simple, modular, unsupervised approach can extract meaningful behavioral patterns across different temporal scales. K-means clustering in PCA space produced stable and interpretable partitions, with robustness confirmed through subsampling, initialization variation, and noise perturbations.
 
-A key advantage of the framework is its modular design, which allows stage-specific adjustments—such as feature selection, dimensionality reduction, or clustering parameters—without affecting other stages. This flexibility enables tailored handling of short-term local dynamics and maneuver-level aggregations while maintaining a consistent analytical pipeline. Even with standard techniques, the approach therefore provides a robust baseline for hierarchical behavioral analysis.
+A key advantage of the framework is its modular design, which allows stage-specific adjustments, such as feature selection, dimensionality reduction, or clustering parameters, without affecting other stages. This flexibility enables tailored handling of short-term local dynamics and maneuver-level aggregations while maintaining a consistent analytical pipeline. Even with standard techniques, the approach therefore provides a robust baseline for hierarchical behavioral analysis.
 
 \subsection{Sliding Windows}
 
@@ -86,33 +86,37 @@ The scenario-based separation clarifies where maneuvers occur, for instance, whe
 
 \section{Framework Insights}
 
-
 Clusters were formed independently of contextual features, ensuring that maneuver-level clustering reflects intrinsic riding kinematics rather than environmental conditions. Scenario separation was applied prior to window clustering, so aggregation naturally accounts for distinct scenario types (intersection vs. non-intersection). This separation produces an indirect effect on maneuver-level clusters: aggregation reflects scenario exposure, allowing execution styles to be implicitly informed by environmental context without including context variables in the clustering itself. Consequently, the framework captures scenario-informed execution patterns while preserving the kinematics-driven structure of the clusters.
 
 Local sliding-window regimes continue to provide the building blocks for maneuver-level execution styles, representing intrinsic patterns derived purely from trajectory-based features. Contextual conditioning then maps these execution styles onto traffic and infrastructure conditions to identify under which certain behaviors tend to occur.
 
 The scenario-based separation effectively controls for broad environmental differences such as intersection versus non-intersection segments. Within these scenario classes, maneuver execution styles show limited differentiation across traffic metrics, indicating that the internal dynamics of maneuvers are largely independent of immediate environmental conditions.
 
-Behavioral self-selection may further influence observed patterns: cyclists likely initiate maneuvers such as overtaking only when perceived interaction conditions—such as available lateral space or acceptable conflict risk—are favorable. This implicit filtering reduces variability in the environmental context observed during the maneuver itself.
+Behavioral self-selection may further influence observed patterns: cyclists likely initiate maneuvers such as overtaking only when perceived interaction conditions, such as available lateral space or acceptable conflict risk, are favorable. This implicit filtering reduces variability in the environmental context observed during the maneuver itself.
 
 Overall, the hierarchical pipeline systematically separates intrinsic maneuver execution patterns from contextual exposure, enabling detailed study of behavior while controlling for environmental variation.
 
 \section{Future Directions}
 Cyclist behavior during complex maneuvers such as overtaking and following remains poorly understood, particularly with respect to execution styles and interaction dynamics. The hierarchical framework developed in this study captures both micro-level riding dynamics and maneuver-level patterns while remaining independent of infrastructure descriptors, providing a systematic basis for cross-scenario behavioral analysis.
 
-Because the underlying data originates from drone-based trajectory recordings, trajectories can be efficiently collected across diverse infrastructure settings. This scalability enables comparative analyses of cyclist behavior across cities, infrastructure designs, and traffic conditions.
+Because the underlying data originates from drone-based trajectory recordings, trajectories can be efficiently collected across diverse infrastructure settings. This scalability enables comparative analyses of cyclist behavior across cities, infrastructure designs, and traffic conditions. Although validated on a single dataset, the framework's infrastructure-agnostic design suggests potential for cross-dataset deployment, which could systematically investigate how built environment characteristics, traffic cultures, and regulatory contexts shape execution strategies and clarify whether identified behavioral patterns generalize across settings or are site-specific.
 
 The framework is also feature-agnostic. Although the present study employed sliding-window riding dynamics, maneuver-level descriptors, and descriptive traffic metrics, alternative feature sets can be integrated without modifying the pipeline. Future work could therefore explore different riding features, micro-regime definitions, or context descriptors to refine behavioral representations.
 
-Further extensions could analyze additional maneuver types—such as turning at intersections, accelerating after stops, or merging behaviors—and investigate maneuver phases more explicitly. Phase-specific contextual metrics or interaction indicators tailored to cyclist dynamics may reveal more detailed relationships between maneuver execution and surrounding traffic conditions.
+Further extensions could analyze additional maneuver types, such as turning at intersections, accelerating after stops, or merging behaviors, and investigate maneuver phases more explicitly. Phase-specific contextual metrics or interaction indicators tailored to cyclist dynamics may reveal more detailed relationships between maneuver execution and surrounding traffic conditions.
 
-The present framework primarily identifies \textit{how} cyclists execute maneuvers by revealing distinct execution strategies derived from trajectory-based riding kinematics. Through scenario separation and subsequent contextual conditioning, it also provides insight into \textit{where} these strategies tend to occur. In particular, the scenario-based separation (e.g., intersection vs. non-intersection) captures the dominant environmental context in which maneuvers take place, while the contextual conditioning step examines how execution styles are exposed to surrounding traffic conditions within those contexts. However, the framework does not directly address the decision processes that lead cyclists to adopt a particular strategy. Future research could therefore investigate \textit{why} and \textit{when} specific execution styles emerge, for example by linking maneuver strategies to preceding traffic conditions, interaction dynamics, or perceived environmental constraints.
+
+The present framework primarily identifies \textit{how} cyclists execute maneuvers by revealing distinct execution strategies derived from trajectory-based riding kinematics. Through scenario separation and subsequent contextual conditioning, it also provides insight into \textit{where} these strategies tend to occur. In particular, the scenario-based separation (e.g., intersection vs. non-intersection) captures the dominant environmental context in which maneuvers take place, while the contextual conditioning step examines how execution styles are exposed to surrounding traffic conditions within those contexts. However, the framework does not directly address the decision processes that lead cyclists to adopt a particular strategy. Future research could therefore investigate the intrinsic factors and contextual conditions under which specific execution styles emerge, for example by linking maneuver strategies to preceding traffic conditions, interaction dynamics, or perceived environmental constraints.
+
+
+
+
+
+
+
+
 
 \iffalse
-
-
-
-
 \section{Methodological Considerations}
 
 
