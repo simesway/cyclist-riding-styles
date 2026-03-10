@@ -4,16 +4,24 @@
 The dataset comprises 4,747 cyclists, from which 11,379 cyclist-cyclist interactions were identified after filtering for temporal overlap, proximity, and movement above walking speed. These interactions form the basis for maneuver extraction.
 
 \subsection{Following Maneuvers}
-\begin{center}
-	\textbf{Missing Figure: Distribution plots of: duration, gap-min/-mean, thw min/mean}
-\end{center}
+
+\begin{figure}[h!]
+	\centering
+	\includegraphics[width=\textwidth]{figures/following_maneuver_stats.pdf}
+	\caption{Distributions of Key Temporal and Spacing Features of Following Maneuvers}
+	\label{fig:f-manuever-stats}
+\end{figure}
 
 From the filtered interactions, 3,792 following maneuvers were extracted, representing ~33\% of all cyclist-cyclist interactions. Following behaviors exhibit substantial variability: mean longitudinal gaps average 11.2m (mode ~5m, tail up to 35m), while minimum gaps often fall near 2m. Time headways are short (mean 2.7s, with many under 1s). Lateral offsets are tight (~0.63m), but speed changes range from -6m/s (deceleration) to +6m/s (acceleration), reflecting heterogeneous pacing and spacing strategies.
 
 \subsection{Overtaking}
-\begin{center}
-	\textbf{Missing Figure: Distribution plots of: duration (pull out/merge back), lateral offset at cross, speed gain, speed mean}
-\end{center}
+
+\begin{figure}[h!]
+	\centering
+	\includegraphics[width=\textwidth]{figures/overtaking_maneuver_stats.pdf}
+	\caption{Distributions of Key Temporal, Kinematic, and Spatial Features of Overtaking Maneuvers}
+	\label{fig:o-manuever-stats}
+\end{figure}
 
 A total of 573 overtaking maneuvers (~5\% of interactions) were detected. Most occur on the right side, with lateral offsets at crossing around 1.5m and maximum displacements exceeding 1.6m. Pull-out and merge-back durations average 3.8s, while speed gains vary broadly (mean 1m/s, extremes ±6m/s). Mean maneuver speeds are ~4.2m/s, highlighting a spectrum from cautious to aggressive behaviors.
 
@@ -22,38 +30,73 @@ A total of 573 overtaking maneuvers (~5\% of interactions) were detected. Most o
 
 \subsection{Overtaking}
 
-\begin{center}
-	\textbf{Missing Figure: Radar plot of cluster centers, both scenarios}
-\end{center}
-
 Overtaking maneuvers were segmented into 8,350 overlapping 1-second windows, of which 5,751 occurred at intersections and 2,599 on non-intersection segments. 
 Although a grid search over candidate cluster numbers was conducted, the final selections were guided not solely by top-ranking metric values but by interpretability and the overall stability of clustering outcomes.
 Clustering quality was high across both scenarios. For intersection windows, the silhouette score was 0.52 and the explained variance 0.75, with 91\% of windows assigned to the stable cluster and 9\% to the volatile cluster. Adjusted Rand Index metrics across subsamples and random seeds indicated consistent regime assignments (median ARI subsample = 0.84, ARI seed = 0.91), and median ARI under noise perturbation remained high (0.78). Non-intersection windows exhibited even stronger separation, with a silhouette score of 0.72 and explained variance of 0.72; 97\% of windows were stable and 3\% volatile. ARI values across subsamples and seeds were near-perfect (median ARI subsample = 1.00, ARI seed = 1.00), demonstrating extremely robust clustering.
 ¸
 Feature selection identified a set of variables that contributed most meaningfully to scenario-specific clustering. 
 Six features were common to both scenarios: \verb|acc_mad|, \verb|acc_max|, \verb|speed_qcv|, \verb|acc_qcv|, \verb|rot_fluc_max_abs| and \verb|rot_fluc_mad|. In addition, \verb|speed_mad| was retained only for intersection windows, whereas \verb|acc_min| and \verb|speed_std| were included exclusively for non-intersection windows.
-Radar plots of cluster centers (Figure X) and correlation matrices (Appendix Table Y) summarize the feature-level distinctions.
+Radar plots of cluster centers (Figure \ref{fig:o-regime-centers}) and correlation matrices (Appendix Table Y) summarize the feature-level distinctions.
+
+
+\begin{figure}[h!]
+	\centering
+	\begin{subfigure}[b]{0.475\textwidth}
+		\centering
+		\includegraphics[width=\textwidth]{figures/overtaking_intersection_centers.pdf}
+		\caption{Intersection}
+		\label{fig:o-regime-i-centers}
+	\end{subfigure}
+	\hfill
+	\begin{subfigure}[b]{0.475\textwidth}
+		\centering
+		\includegraphics[width=\textwidth]{figures/overtaking_non-intersection_centers.pdf}
+		\caption{Non-Intersection}
+		\label{fig:o-regime-n-centers}
+	\end{subfigure}
+	\caption{Cluster Centers of Intersection and Non-Intersection Local Regimes in Overtaking Maneuvers}
+	\label{fig:o-regime-centers}
+\end{figure}
+
 
 The resulting clusters can be broadly characterized as stable and volatile, reflecting the magnitude and short-term variability of riding dynamics. The stable regime is marked by low fluctuations in speed, acceleration, and yaw rate, indicative of controlled, smooth riding behavior. In contrast, the volatile regime exhibits pronounced variability in these signals, reflecting abrupt or reactive maneuvering. Differences between scenarios are evident: intersection windows show greater variability across multiple features, consistent with higher environmental complexity and possibly turning, while non-intersection windows are more homogeneous, reflecting smoother, less interrupted riding behavior. These findings demonstrate that overtaking maneuvers can be meaningfully decomposed into micro-behavioral regimes, with scenario-specific feature contributions and clearly distinguishable stability–volatility profiles.
 
 \subsection{Following}
-\begin{center}
-	\textbf{Missing Figure: Radar plot of cluster centers, both scenarios}
-\end{center}
+
+
 
 In contrast to overtaking maneuvers, which exhibited clearly separated and event-like behavioral regimes, following behavior revealed a more gradual structure. While clustering outcomes were highly stable across resampling and initialization, separation between clusters was moderate, suggesting structured modulation of riding dynamics rather than sharply distinct behavioral modes.
 
 Following maneuvers were segmented into 55,532 overlapping 1-second windows, with 26,297 windows (47.4\%) occurring at intersections and 29,235 (52.6\%) on non-intersection segments. Scenario-specific clustering was performed using riding-dynamics features selected through a metric-guided but interpretability-constrained procedure (see Methods). Configurations that maximized separation metrics occasionally produced degenerate solutions (e.g., clusters containing <1\% of windows) and were therefore discarded in favor of stable, non-degenerate partitions with meaningful size distributions.
 
+
 At intersections, a three-cluster solution was selected. Clustering stability was exceptionally high, with median ARI subsample = 0.991 and ARI seed = 0.997, indicating near-identical partitions across subsamples and random initializations. Robustness to noise remained substantial (median ARI noise = 0.648). The explained variance was 0.762. Although the silhouette score (0.319) and Davies–Bouldin index (1.139) indicated moderate separation, cluster proportions were well balanced (48.5\%, 30.1\%, and 21.5\%), avoiding degeneracy and supporting structural validity.
 
 For non-intersection segments, a two-cluster solution was selected. Stability metrics were again extremely high (median ARI subsample = 0.997, ARI seed = 0.9999), with ARI noise = 0.749. The explained variance reached 0.968, indicating that most variance in the feature space was captured by the partition. Separation metrics were lower (silhouette = 0.266; Davies–Bouldin = 1.668), but cluster sizes were nearly balanced (54.4\% and 45.6\%), suggesting persistent but moderately separated structure.
 
-Across both scenarios, the retained features included \verb|acc_max|, \verb|acc_qcv|, \verb|speed_mad|, \verb|rot_fluc_max_abs| and \verb|rot_fluc_mad|. Intersection clustering additionally retained \verb|speed_qcv| and \verb|acc_mad|, whereas non-intersection clustering included \verb|acc_min| as a scenario-specific feature. Radar plots of cluster centers (Figure X) and full statistics (Appendix Table Y) illustrate feature-level distinctions.
+Across both scenarios, the retained features included \verb|acc_max|, \verb|acc_qcv|, \verb|speed_mad|, \verb|rot_fluc_max_abs| and \verb|rot_fluc_mad|. Intersection clustering additionally retained \verb|speed_qcv| and \verb|acc_mad|, whereas non-intersection clustering included \verb|acc_min| as a scenario-specific feature. Radar plots of cluster centers (Figure \ref{fig:f-regime-centers}) and full statistics (Appendix Table Y) illustrate feature-level distinctions.
 
-\iffalse
-Taken together, the combination of extremely high partition stability and only moderate geometric separation suggests that following behavior does not split into sharply distinct regimes, but rather into recurring patterns with gradual transitions between them. Such patterns can still be meaningfully represented as local states, as long as they reflect consistent and reproducible variations in observable riding dynamics. The resulting clusters therefore capture structured differences in motion variability without implying categorical behavioral types.
-\fi
+
+\begin{figure}[h!]
+	\centering
+	\begin{subfigure}[b]{0.475\textwidth}
+		\centering
+		\includegraphics[width=\textwidth]{figures/following_intersection_centers.pdf}
+		\caption{Intersection}
+		\label{fig:f-regime-i-centers}
+	\end{subfigure}
+	\hfill
+	\begin{subfigure}[b]{0.475\textwidth}
+		\centering
+		\includegraphics[width=\textwidth]{figures/following_non-intersection_centers.pdf}
+		\caption{Non-Intersection}
+		\label{fig:f-regime-n-centers}
+	\end{subfigure}
+	\caption{Cluster Centers of Intersection and Non-Intersection Local Regimes in Following Maneuvers}
+	\label{fig:f-regime-centers}
+\end{figure}
+
+
 \paragraph{Intersection}
 The largest cluster (48.5\%, R0) reflects \textbf{smooth, steady pedaling}, with low speed and acceleration variability, modest positive mean acceleration, and minimal short-term fluctuations—indicative of relaxed, consistent riding.
 
@@ -74,22 +117,62 @@ Compared to overtaking, following behavior exhibits higher regime multiplicity a
 
 \section{Aggregation Properties}
 
-\begin{center}
-	\textbf{Missing Figure: Plot of global-entropy, scenario exposures (both maneuvers), aggregated run lengths for all maneuvers}
-\end{center}
+\begin{figure}[h!]
+	\centering
+	
+	\begin{subfigure}{\textwidth}
+		\centering
+		\includegraphics[width=\textwidth]{figures/overtaking_maneuver_agg_stats.pdf}
+		\caption{Overtaking Maneuvers}
+		\label{fig:o-agg-stats}
+	\end{subfigure}
+	
+	\vspace{0.5cm}
+	
+	\begin{subfigure}{\textwidth}
+		\centering
+		\includegraphics[width=\textwidth]{figures/following_maneuver_agg_stats.pdf}
+		\caption{Following Maneuvers}
+		\label{fig:f-agg-stats}
+	\end{subfigure}
+	
+	\caption{Global Entropy, Scenario Exposure, and Mean Run Lengths of Aggregated Local Regimes}
+	\label{fig:agg-stats}
+\end{figure}
 
-\begin{center}
-	\textbf{Missing Figure: Scatter plot: global entropy vs maneuver duration to show if structural diversity is just a duration artifact or real.}
-\end{center}
 
 Window-level regime assignments were aggregated to generate maneuver-level representations capturing the composition, persistence, and temporal distribution of local behavioral states. Aggregation considered scenario exposure, regime proportions, run-length statistics, centers of mass, and entropy measures (see Methods).
 
 Following and overtaking maneuvers had comparable mean durations (7.6 s), though following maneuvers exhibited greater variability (SD = 8.0 s vs 2.2 s). Despite similar overall durations, the aggregation metrics reveal marked differences in structural composition.
 
 \paragraph{Global Entropy and Diversity}
+
+\begin{figure}[h!]
+	\centering
+	
+	\begin{subfigure}{\textwidth}
+		\centering
+		\includegraphics[width=\textwidth]{figures/overtaking_entropy_duration.pdf}
+		\caption{Overtaking Maneuvers}
+		\label{fig:o-entropy-duration}
+	\end{subfigure}
+	
+	\vspace{0.5cm}
+	
+	\begin{subfigure}{\textwidth}
+		\centering
+		\includegraphics[width=\textwidth]{figures/following_entropy_duration.pdf}
+		\caption{Following Maneuvers}
+		\label{fig:f-entropy-duration}
+	\end{subfigure}
+	
+	\caption{Global Entropy vs Duration for Following and Overtaking Maneuvers}
+	\label{fig:entropy-duration}
+\end{figure}
+
 Global entropy was used to quantify the compositional diversity of regime sequences within individual maneuvers. While following and overtaking maneuvers exhibited comparable mean durations (7.6,s), their internal structure differed markedly.
 
-Following maneuvers showed substantially higher heterogeneity (median entropy = 0.731; 38\% single-regime) compared to overtaking maneuvers (median entropy = 0.0; 54\% single-regime). Importantly, this difference cannot be attributed solely to maneuver length. Although entropy increased with duration in following maneuvers (Spearman $\rho$ = 0.54), overtaking maneuvers exhibited only a weak association ($\rho$ = 0.11). When restricting the analysis to the 5–10,s duration range, where both maneuver types are well represented, following maneuvers remained predominantly multi-regime (median entropy = 0.837), whereas overtaking maneuvers were still frequently dominated by a single regime (55\% single-regime).
+Following maneuvers showed substantially higher heterogeneity (median entropy = 0.731; 38\% single-regime) compared to overtaking maneuvers (median entropy = 0.0; 54\% single-regime). Importantly, this difference cannot be attributed solely to maneuver length. Entropy increased with duration in following maneuvers (Spearman $\rho = 0.54$), with linear fits explaining 19\% of the variance across the entire duration range (R$^2 = 0.192$) and 32\% when restricting to the 1–15~s range ($\approx$ mean $\pm$ 1 SD; R$^2 = 0.321$; Figure~\ref{fig:f-entropy-duration}). In contrast, overtaking maneuvers exhibited only a weak association ($\rho = 0.11$), with linear fits explaining virtually none of the variance across the entire range (R$^2 = 0.007$) or within the 5–10~s window ($\approx$ mean $\pm$ 1 SD; R$^2 = 0.021$; Figure~\ref{fig:o-entropy-duration}). Even when focusing on comparable durations, following maneuvers remained predominantly multi-regime (median entropy = 0.837), whereas overtaking maneuvers were still frequently dominated by a single regime (55\% single-regime).
 
 \iffalse
 These results indicate a clear difference in how maneuvers unfold over time. Following maneuvers typically consist of several shorter regime segments, reflecting ongoing adjustments during the interaction. Overtaking maneuvers, in contrast, are often dominated by a single regime that persists throughout most of the maneuver.
@@ -122,9 +205,12 @@ For overtaking maneuvers, five clusters were obtained. Stability was near perfec
 
 Overtaking maneuvers were clustered using aggregated regime composition, persistence, entropy, and maneuver-level dynamics. The five-cluster solution differentiates execution styles along three main dimensions: scenario exposure, micro-regime dominance, and maneuver intensity (speed, acceleration, lateral displacement).
 
-\begin{center}
-	\textbf{Missing Figure: Radar plot of cluster centers or heatmap, using most distinctive features}
-\end{center}
+\begin{figure}[h!]
+	\centering
+	\includegraphics[width=0.6\textwidth]{figures/overtaking_maneuver_centers.pdf}
+	\caption{Cluster Means of Selected Aggregation Features for Overtaking Maneuvers}
+	\label{fig:o-manuever-agg}
+\end{figure}
 
 
 Clustering reveals five distinct overtaking execution styles that differ primarily in speed, acceleration strategy, lateral passing behavior, and temporal stability of behavioral regimes.
@@ -163,9 +249,12 @@ Finally, a small but distinctive cluster (\textbf{Cluster 2}) captures overtakes
 
 For following maneuvers, six clusters were identified. Stability measures indicated robust separation: median subsample ARI = 0.933, seed ARI = 0.987, and noise ARI = 0.923. The minimum cluster fraction was 0.111, suggesting no cluster was sparsely populated. Internal validity metrics supported the clustering choice, with a silhouette score of 0.245, Calinski-Harabasz index of 616, Davies-Bouldin index of 1.40, and 61\% of variance explained by the first seven principal components. Cluster sizes ranged from 430 to 757 maneuvers, reflecting relatively balanced partitions.
 
-\begin{center}
-	\textbf{Missing Figure: Radar plot of cluster centers or heatmap, using most distinctive features}
-\end{center}
+\begin{figure}[h!]
+	\centering
+	\includegraphics[width=0.6\textwidth]{figures/following_maneuver_centers.pdf}
+	\caption{Cluster Means of Selected Aggregation Features for Following Maneuvers}
+	\label{fig:f-manuever-agg}
+\end{figure}
 
 
 \paragraph{Short and Moderate Following}
@@ -251,9 +340,12 @@ Traffic exposure metrics showed limited differentiation between maneuver cluster
 
 \paragraph{Overtaking Maneuvers}
 
-\begin{center}
-	\textbf{Missing Figure: missing plots underlining the next paragraph}
-\end{center}
+\begin{figure}[h!]
+	\centering
+	\includegraphics[width=\textwidth]{figures/overtaking_ecdf.pdf}
+	\caption{Selection ECDFs of Surrogate Safety Metrics Across Overtaking Clusters}
+	\label{fig:o-ecdf}
+\end{figure}
 
 For overtaking maneuvers occurring primarily at intersections (Cluster 0 and 4), moderate differences were observed in traffic exposure metrics. Accelerating overtakes (Cluster 4) showed higher pedestrian DRAC values and lower pedestrian minimum TTC compared to slow-cautious overtakes (Cluster 0). Bicycle-related metrics showed similar but less pronounced tendencies.
 
@@ -264,9 +356,12 @@ The sharp-steering overtakes cluster (cluster 2) exhibited stepwise ECDF curves 
 
 \paragraph{Following Maneuvers}
 
-\begin{center}
-	\textbf{Missing Figure: representative ecdf for ttc and drac that show overlapping curves, for both groups}
-\end{center}
+\begin{figure}[h!]
+	\centering
+	\includegraphics[width=\textwidth]{figures/following_ecdf.pdf}
+	\caption{Selection ECDFs of Surrogate Safety Metrics Across Following Clusters}
+	\label{fig:f-ecdf}
+\end{figure}
 
 Following maneuvers showed little differentiation in traffic exposure across clusters. Intersection-dominant clusters (Clusters 0, 2, and 4; ) displayed nearly identical ECDF distributions across all analyzed traffic metrics.
 
