@@ -8,13 +8,16 @@
 
 \usepackage{amsmath}
 \usepackage{paralist}
+\usepackage{tikz}
+\usetikzlibrary{positioning}
+
 \usepackage{hyperref}
-\usepackage{amssymb}
+%\usepackage{amssymb}
 \usepackage[a4paper,width=150mm,top=25mm,bottom=25mm,bindingoffset=6mm]{geometry}
 \setcounter{secnumdepth}{3}
 \setcounter{tocdepth}{2}
 
-\usepackage{fancyhdr}
+
 
 \usepackage{booktabs}
 \usepackage{multirow}
@@ -22,7 +25,11 @@
 \usepackage{color}
 \usepackage{tabularray}
 
+\usepackage{fancyhdr}
 \pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\rightmark}
+\fancyfoot[C]{\thepage}
 
 \usepackage[
 	style=ieee,
@@ -44,7 +51,7 @@
 
 \addbibresource{references.bib}
 
-\title{Identifying Cyclists Riding Styles during complex maneuvers}
+\title{Cyclist Execution Styles in Overtaking and Following Maneuvers: A Hierarchical Unsupervised Analysis of Trajectory Data}
 \author{Simon Eiber}
 \date{12 March 2026}
 
