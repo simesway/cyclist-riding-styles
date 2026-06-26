@@ -8,6 +8,18 @@ from maneuvers.base import Maneuver, WindowRecord, ScenarioType, RegimeType, Sce
   RegimeAggregation
 
 
+"""
+This module defines the new RegimeAggregator class, which computes regime-aggregation statistics 
+for a given maneuver based on its window sequence.
+
+This is the robust version that handles any number of scenarios and regimes, and computes a comprehensive set of statistics 
+including proportions, run lengths, COM, and entropy.
+
+Old version: LocalRegimeAggregator in src/features/aggregation.py, which assumed a 2 cluster solution (stable vs volatile) 
+for each scenario and computed only a few stats.
+"""
+
+
 class RegimeAggregator:
   def aggregate(
       self,

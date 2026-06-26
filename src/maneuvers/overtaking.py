@@ -11,6 +11,16 @@ from maneuvers.base import OvertakingManeuver
 from maneuvers.utils import get_lateral_longitudinal, extract_overtake_windows
 
 
+"""
+This module implements overtaking maneuver detection based on lateral distance thresholds. 
+The main idea is to identify the center of the overtake (where the lateral distance is maximal) 
+and then search backward and forward in time for points where the lateral distance falls below certain thresholds, 
+indicating the start and end of the maneuver. 
+The thresholds are generated logarithmically based on the maximum lateral distance at the overtaking point.
+"""
+
+
+
 def compute_thresholds(lat_z: float, num_thresholds: int=5, min_thresh: float=0.05, global_max: float=1.2) -> List[float]:
   """Generate a set of logarithmic thresholds based on the lateral distance at the overtake center."""
   upper_bound = np.clip(abs(lat_z), min_thresh, global_max)

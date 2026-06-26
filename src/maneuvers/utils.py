@@ -5,7 +5,9 @@ from data.utils import clean_heading
 from dataclasses import asdict, fields
 from typing import List
 
-
+"""
+Utils for maneuver extraction and processing.
+"""
 
 
 def save_maneuvers_to_csv(maneuvers, filepath):
@@ -34,15 +36,6 @@ def unflatten_optional(row: Dict[str, Any], prefix: str, cls: Type):
 def get_lateral_longitudinal(a, b):
   """
   Compute lateral and longitudinal vectors in a fixed POV (vehicle a).
-
-  a, b: DataFrames with columns ["timestamp", "translation_x", "translation_y", "rotation_z"]
-
-  Returns:
-      ts: aligned timestamps
-      follower_ids: array of 1 (a) or 2 (b)
-      leader_ids: array of 1 (a) or 2 (b)
-      lateral: array in a’s frame
-      longitudinal: array in a’s frame
   """
   # sync timestamps
   ts, i_a, i_b = np.intersect1d(

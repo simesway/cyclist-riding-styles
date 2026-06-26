@@ -9,6 +9,11 @@ from features.base import RidingFeatures, TrafficFeatures, InfrastructureFeature
 from maneuvers.utils import flatten_optional
 
 
+"""
+This module defines the base Maneuver class and its subclasses for different maneuver types and levels (Interaction, Following, Overtaking, RegimeAggregation (new)).
+"""
+
+
 ManeuverType = Literal["interaction", "following", "overtaking"]
 ScenarioType = str
 RegimeType = Tuple[ScenarioType, int]

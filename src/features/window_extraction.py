@@ -52,7 +52,10 @@ class SlidingWindows:
 
 
 class WindowBuilder:
-  """Builds WindowRecord objects for a maneuver"""
+  """
+  Builds WindowRecord objects for a maneuver.
+  Note: this class is designed to be flexible with different feature extractors, which can be set to NullExtractor if not needed.
+  """
   def __init__(
     self,
     window_extractor: SlidingWindows,
@@ -66,6 +69,7 @@ class WindowBuilder:
     self.infra_extractor = infra_extractor
 
   def infer_features(self, maneuver_df: pd.DataFrame, maneuver: Maneuver) -> pd.DataFrame:
+    """Infer any additional features needed for window extraction. Infered once for the whole maneuver, not per window."""
     df = maneuver_df.copy()
     df = self.riding_extractor.prepare(df, maneuver)
     df = self.infra_extractor.prepare(df, maneuver)

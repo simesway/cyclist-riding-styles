@@ -40,7 +40,6 @@ def grid_search(
 
   for corr, vif, k, comp in tqdm(grid, total=len(grid)):
     try:
-        # --- feature selection ---
       selector = FeatureSelector(corr_threshold=corr, vif_threshold=vif)
       drop_feats = selector.fit(base_df)
 

@@ -17,6 +17,7 @@ class StabilityResult:
 
 
 class RegimeStabilityTester:
+  """Tests clustering stability under subsampling, random seed, and noise perturbations."""
   def __init__(
       self,
       clusterer_factory,

@@ -10,8 +10,11 @@ from clustering.semantics import RegimeClusterMapper
 class ManeuverAggregator:
   def __init__(self, maneuvers: List[Maneuver], windows: List[WindowRecord]):
     """
-    maneuvers: list of Maneuver objects (with cluster_id)
-    windows: list of all WindowRecord objects
+    Aggregator to compute features at the maneuver and cluster level from window-level features.
+     - build_windows_df: converts list of WindowRecords to a flat DataFrame for easier aggregation
+     - aggregate_per_maneuver: computes mean (and optionally std) of window features per maneuver, and attaches cluster_id
+     - aggregate_per_cluster: averages maneuver-level features across maneuvers in the same cluster to get cluster-level features
+     Note: this class assumes that maneuvers have already been assigned to clusters (i.e. cluster_id is set).
     """
     self.maneuvers = {m.id: m for m in maneuvers}  # map id -> Maneuver
     self.windows = windows
@@ -70,6 +73,11 @@ class ManeuverAggregator:
 
 
 class LocalRegimeAggregator:
+  """
+  Old aggregator that assumed a 2 cluster solution (stable and volatile) for each scenario.
+  Kept for reference but not used in main pipeline.
+  new version in src/maneuvers/regime_aggregation.py
+  """
   @staticmethod
   def aggregate(
       maneuver: Maneuver,

@@ -1,6 +1,6 @@
-import numpy as np
 from scipy.ndimage import gaussian_filter1d
 
+"""Smoothing function used in maneuver detection."""
 
 # sigma_seconds: 0.3-0.6 for distances, 0.15-0.3 for velocities
 def smooth(x, sigma_seconds, fps=12.5):

@@ -7,6 +7,10 @@ import numpy as np
 def count_brake_events(long_acc: np.ndarray,
                        min_frames: int = 5,
                        acc_threshold: float = -1.5) -> int:
+  """
+  This function counts the number of braking events in a sequence of longitudinal acceleration data.
+  It does not work as intended and was excluded from the final evaluation, but is left here for reference.
+  """
   braking = long_acc < acc_threshold
   padded = np.pad(braking.astype(int), (1, 1))  # pad to detect edges
   diff = np.diff(padded)

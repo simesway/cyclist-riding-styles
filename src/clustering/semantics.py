@@ -4,6 +4,14 @@ import pandas as pd
 from features.adapters import FeatureAdapter
 
 
+"""
+This class maps clusters to "stable" or "volatile" regimes based on the average volatility of the cluster centers.
+The cluster with the lowest average volatility is labeled "stable", while the one with the highest is labeled "volatile".
+This was an early class used to interpret the clusters, before the integration of the regime aggregation.
+
+The class is still used in some notebooks, but solely for cluster labels in plots a.
+"""
+
 class RegimeClusterMapper:
   def __init__(self):
     self.cluster_map = {}

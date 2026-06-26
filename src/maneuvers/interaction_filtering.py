@@ -5,6 +5,10 @@ from data.utils import get_time_window
 from tqdm import tqdm
 
 
+"""
+Post-Interaction-Retrieval Filtering
+"""
+
 def filter_raw_interactions(
     raw_df: pd.DataFrame,
     interactions_df: pd.DataFrame,

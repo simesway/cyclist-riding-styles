@@ -179,7 +179,6 @@ def max_drac(
   s_min = 0.2 # minimum effective stopping distance (m)
   a_max = 15.0 # maximum reasonable deceleration (m/s^2)
 
-  # closing speed (radial)
   v_r = -(df["dx"] * df["vx_rel"] + df["dy"] * df["vy_rel"]) / df["distance"]
 
   mask = (v_r > 0) & (df["distance"] > r_safe)

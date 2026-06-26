@@ -1,5 +1,12 @@
 from dataclasses import dataclass
 
+
+"""
+This module defines dataclasses for the various feature sets used in the clustering pipeline.
+Containing RidingFeatures, TrafficFeatures, InfrastructureFeatures, OvertakingFeatures, FollowingFeatures, and RegimeAggregation (old).
+"""
+
+
 @dataclass
 class RidingFeatures:
   # Magnitude:
@@ -214,6 +221,10 @@ class FollowingFeatures:
 
 @dataclass
 class RegimeAggregation:
+  """
+  Old regime aggregation feature class, see also aggregation.LocalRegimeAggregation.
+  new version in src/maneuvers/regime_aggregation.py
+  """
   maneuver_id: int
   n_windows: int
   is_active: bool

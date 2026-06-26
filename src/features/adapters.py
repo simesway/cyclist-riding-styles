@@ -8,6 +8,13 @@ from features.base import RegimeAggregation, OvertakingFeatures, FollowingFeatur
 from maneuvers.base import ScenarioType, RegimeStats
 
 
+"""
+This module defines adapters to convert complex (nested) feature objects (like OvertakingFeatures, RegimeAggregation) 
+into flat vectors for the clustering pipelines. 
+It also includes a FeatureMatrixBuilder to create numpy arrays or DataFrames from lists of objects using these adapters.
+"""
+
+
 class FeatureAdapter:
   def __init__(self, feature_class, exclude: List[str] = None):
     self.feature_class = feature_class
